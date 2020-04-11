@@ -1,5 +1,6 @@
 package land.oz.turorial
 
+import mu.KotlinLogging
 import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.system.Checks
 import org.lwjgl.system.MemoryStack
@@ -10,6 +11,7 @@ import org.lwjgl.vulkan.VK10.*
 import uno.glfw.glfw
 import uno.requiredInstanceExtensions
 import vkk.identifiers.Instance
+import vkk.identifiers.PhysicalDevice
 import vkk.vk
 import vkk.vk10.enumerateInstanceExtensionProperties
 import vkk.vk10.instanceLayerProperties
@@ -29,6 +31,8 @@ fun main() {
 }
 
 class HelloTriangle {
+
+    val logger = KotlinLogging.logger {}
 
     var window: Long = 0
 
@@ -51,41 +55,13 @@ class HelloTriangle {
         pickPhysicalDevice()
     }
 
-//    lateinit var physicalDevice: PhysicalDevice
+        lateinit var physicalDevice: PhysicalDevice
     private fun pickPhysicalDevice() {
-        println("aaa")
         val devices = instance.physicalDevices
-        println("bbb")
-
-    for (device in devices) {
-//        MemoryStack.stackPush().use {
-//                        device.properties
-//                        println("aaa")
-//                    }
-//        val stackPush = MemoryStack.stackPush()
-//        PhysicalDeviceProperties(kool.pointers.BytePtr(VmaVulkanFunctions.nvkGetPhysicalDeviceProperties(device.address())))
-//        println(device.properties.deviceType)
-//        MemoryStack.stackPop()
-//        println("ccc")
-//        println("phyDevPro: ${VmaVulkanFunctions.nvkGetPhysicalDeviceProperties(device.address())}")
-
-//        println(device.instance)
-//        println(device.capabilities.VK_EXT_acquire_xlib_display)
-//        println(device.toString())
-//        println(device.capabilities.vkGetPhysicalDeviceMemoryProperties)
-//        println(device.capabilities.vkGetPhysicalDeviceProperties)
-//        println(device.capabilities.vkGetPhysicalDeviceProperties2)
-//        println(device.capabilities.vkGetPhysicalDeviceProperties2KHR)
-//        println(device.capabilities.VK_KHR_get_physical_device_properties2)
-//        println(device.capabilities.Vulkan10)
-//        println(device.capabilities.Vulkan11)
-        println("deviceName: ${device.properties.deviceName}")
-//            println(device.properties.deviceType)
-//            println("${device.properties.deviceName} valid: ${device.isValid}")
+        for (device in devices) {
+            logger.info("deviceName: ${device.properties.deviceName}")
         }
-//        physicalDevice = devices[0]
-//        physicalDevice.properties.deviceType
-//        physicalDevice.features
+        physicalDevice = devices[0]
     }
 
     private fun setupDebugMessenger() {

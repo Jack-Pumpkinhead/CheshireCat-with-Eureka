@@ -22,10 +22,22 @@ repositories {
     maven { url = uri("https://jitpack.io") }
 }
 
+//If something went wrong, replace testImplementation to implementation
 dependencies {
     implementation(kotlin("stdlib"))
     implementation(kotlin("stdlib-jdk8"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.5")
+    testImplementation("io.kotest:kotest-runner-junit5-jvm:4.0.2") // for kotest framework
+    testImplementation("io.kotest:kotest-assertions-core-jvm:4.0.2") // for kotest core jvm assertions
+    implementation("org.apache.logging.log4j","log4j-api","2.13.1")
+    implementation("org.apache.logging.log4j","log4j-core","2.13.1")
+    // https://mvnrepository.com/artifact/org.slf4j/slf4j-api
+    implementation("org.slf4j", "slf4j-api", "1.7.25")
+    // https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-slf4j-impl
+    implementation("org.apache.logging.log4j", "log4j-slf4j-impl", "2.13.1")
+    implementation("io.github.microutils:kotlin-logging:1.7.9"){
+        exclude("org.slf4j", "slf4j-api")
+    }
 
     implementation("com.google.guava:guava:28.2-jre")
 
@@ -52,42 +64,48 @@ dependencies {
 
 //    duplicated
 //    outdated
-//    implementation("com.github.kotlin-graphics:vkk:v0.3.0"){
     implementation("com.github.kotlin-graphics:vkk:-SNAPSHOT"){
         exclude("com.github.kotlin-graphics.glm","glm")
         exclude("com.github.kotlin-graphics","gli")
         exclude("com.github.kotlin-graphics","kool")
         exclude("com.github.kotlin-graphics","kotlin-unsigned")
+        exclude("org.jetbrains.kotlin","kotlin-reflect")
     }
-//    implementation("com.github.kotlin-graphics:gln:0.5.0"){
     implementation("com.github.kotlin-graphics:gln:-SNAPSHOT"){
         exclude("com.github.kotlin-graphics.glm","glm")
         exclude("com.github.kotlin-graphics","gli")
         exclude("com.github.kotlin-graphics","kool")
         exclude("com.github.kotlin-graphics","kotlin-unsigned")
+        exclude("org.jetbrains.kotlin","kotlin-reflect")
     }
-//    implementation("com.github.kotlin-graphics:glm:v1.0.1"){
+    testImplementation("com.github.kotlin-graphics.glm","glm-test","-SNAPSHOT"){
+        exclude("com.github.kotlin-graphics","kool")
+        exclude("com.github.kotlin-graphics","kotlin-unsigned")
+        exclude("org.jetbrains.kotlin","kotlin-reflect")
+        exclude("org.junit.jupiter","junit-jupiter-api")
+        exclude("org.slf4j","slf4j-api")
+    }
     implementation("com.github.kotlin-graphics:glm:-SNAPSHOT"){
+        exclude("com.github.kotlin-graphics.glm", "glm-test")
         exclude("com.github.kotlin-graphics","kool")
         exclude("com.github.kotlin-graphics","kotlin-unsigned")
     }
-//    implementation("com.github.kotlin-graphics:gli:v0.8.3.0-build-14"){
     implementation("com.github.kotlin-graphics:gli:-SNAPSHOT"){
         exclude("com.github.kotlin-graphics.glm","glm")
         exclude("com.github.kotlin-graphics","kool")
         exclude("com.github.kotlin-graphics","kotlin-unsigned")
     }
-//    implementation("com.github.kotlin-graphics:kool:v0.8.5")
     implementation("com.github.kotlin-graphics:kool:-SNAPSHOT")
 //    implementation("com.github.kotlin-graphics:kotlin-unsigned:v3.2.4")
+    implementation("com.github.kotlin-graphics:kotlin-unsigned:-SNAPSHOT")
 
-//    implementation("com.github.kotlin-graphics.uno-sdk:uno-core:v0.7.7"){
     implementation("com.github.kotlin-graphics.uno-sdk:uno-core:-SNAPSHOT"){
         exclude("com.github.kotlin-graphics.glm","glm")
         exclude("com.github.kotlin-graphics","gln")
         exclude("com.github.kotlin-graphics","gli")
         exclude("com.github.kotlin-graphics","kool")
         exclude("com.github.kotlin-graphics","kotlin-unsigned")
+        exclude("org.jetbrains.kotlin","kotlin-reflect")
     }
     implementation("com.github.kotlin-graphics:uno-sdk:-SNAPSHOT"){
         exclude("com.github.kotlin-graphics","vkk")
@@ -97,6 +115,7 @@ dependencies {
         exclude("com.github.kotlin-graphics","uno-sdk")
         exclude("com.github.kotlin-graphics","kool")
         exclude("com.github.kotlin-graphics","kotlin-unsigned")
+        exclude("org.jetbrains.kotlin","kotlin-reflect")
     }
     implementation("com.github.kotlin-graphics.uno-sdk:build:-SNAPSHOT"){
         exclude("com.github.kotlin-graphics","vkk")
@@ -106,6 +125,7 @@ dependencies {
         exclude("com.github.kotlin-graphics","uno-sdk")
         exclude("com.github.kotlin-graphics","kool")
         exclude("com.github.kotlin-graphics","kotlin-unsigned")
+        exclude("org.jetbrains.kotlin","kotlin-reflect")
     }
     implementation("com.github.kotlin-graphics.uno-sdk:uno-awt:-SNAPSHOT"){
         exclude("com.github.kotlin-graphics","vkk")
@@ -115,6 +135,7 @@ dependencies {
         exclude("com.github.kotlin-graphics","uno-sdk")
         exclude("com.github.kotlin-graphics","kool")
         exclude("com.github.kotlin-graphics","kotlin-unsigned")
+        exclude("org.jetbrains.kotlin","kotlin-reflect")
     }
     implementation("com.github.kotlin-graphics.uno-sdk:uno-gl:-SNAPSHOT"){
         exclude("com.github.kotlin-graphics","vkk")
@@ -124,6 +145,7 @@ dependencies {
         exclude("com.github.kotlin-graphics","uno-sdk")
         exclude("com.github.kotlin-graphics","kool")
         exclude("com.github.kotlin-graphics","kotlin-unsigned")
+        exclude("org.jetbrains.kotlin","kotlin-reflect")
     }
     implementation("com.github.kotlin-graphics.uno-sdk:uno-vk:-SNAPSHOT"){
         exclude("com.github.kotlin-graphics","vkk")
@@ -133,8 +155,8 @@ dependencies {
         exclude("com.github.kotlin-graphics","uno-sdk")
         exclude("com.github.kotlin-graphics","kool")
         exclude("com.github.kotlin-graphics","kotlin-unsigned")
+        exclude("org.jetbrains.kotlin","kotlin-reflect")
     }
-//    implementation("com.github.kotlin-graphics.imgui:imgui-core:v1.75"){
     implementation("com.github.kotlin-graphics.imgui:imgui-core:-SNAPSHOT"){
         exclude("com.github.kotlin-graphics","vkk")
         exclude("com.github.kotlin-graphics","gln")
@@ -150,8 +172,6 @@ dependencies {
         exclude("com.github.kotlin-graphics.uno-sdk")
     }
 
-    testImplementation("io.kotest:kotest-runner-junit5-jvm:4.0.2") // for kotest framework
-    testImplementation("io.kotest:kotest-assertions-core-jvm:4.0.2") // for kotest core jvm assertions
 }
 
 /*

@@ -1,0 +1,9 @@
+/.gradle/
+/build/
+/gradle/wrapper/
+/src/main/resources/org/lwjgl/demo/
+/src/main/java/org/lwjgl/demo/
+/gradlew
+/gradlew.bat
+/buildgradle_history.rar
+/log/

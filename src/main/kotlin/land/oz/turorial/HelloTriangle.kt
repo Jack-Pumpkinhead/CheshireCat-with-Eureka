@@ -1,26 +1,30 @@
 package land.oz.turorial
 
 import mu.KotlinLogging
-import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.system.Checks
-import org.lwjgl.system.MemoryStack
-import org.lwjgl.system.MemoryUtil.NULL
-import org.lwjgl.util.vma.VmaVulkanFunctions
-import org.lwjgl.vulkan.EXTDebugUtils.*
-import org.lwjgl.vulkan.VK10.*
+import org.lwjgl.vulkan.EXTDebugUtils.VK_EXT_DEBUG_UTILS_EXTENSION_NAME
+import org.lwjgl.vulkan.VK10.VK_API_VERSION_1_0
+import org.lwjgl.vulkan.VK10.VK_MAKE_VERSION
+import uno.glfw.GlfwWindow
 import uno.glfw.glfw
+import uno.glfw.windowHint.Api.*
 import uno.requiredInstanceExtensions
+import vkk.VkPhysicalDeviceType
+import vkk.VkQueueFlag
+import vkk.extensions.DebugUtilsMessengerCallbackEXT
+import vkk.has
+import vkk.identifiers.Device
 import vkk.identifiers.Instance
 import vkk.identifiers.PhysicalDevice
+import vkk.identifiers.Queue
 import vkk.vk
-import vkk.vk10.enumerateInstanceExtensionProperties
-import vkk.vk10.instanceLayerProperties
-import vkk.vk10.physicalDevices
-import vkk.vk10.properties
+import vkk.vk10.*
 import vkk.vk10.structs.ApplicationInfo
+import vkk.vk10.structs.DeviceCreateInfo
+import vkk.vk10.structs.DeviceQueueCreateInfo
 import vkk.vk10.structs.InstanceCreateInfo
-
-//import kool.pointers
+import java.util.function.Consumer
+import kotlin.random.Random
 
 /**
  * Created by CowardlyLion on 2020/4/9 14:16
@@ -34,18 +38,24 @@ class HelloTriangle {
 
     val logger = KotlinLogging.logger {}
 
-    var window: Long = 0
+    lateinit var window: GlfwWindow
 
     private val width = 937
 
     private val height = 531
 
     private fun initWindow() {
-        if(!glfwInit()) error("glfwInit() failed")
-        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API)
-        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE)
-        window = glfwCreateWindow(width, height, "Vulkan", NULL, NULL)
-        assert(window != NULL)
+        glfw.init()
+        glfw.windowHint {
+            api = None
+            resizable = false
+        }
+        window = GlfwWindow(
+            width = width,
+            height = height,
+            title = "HelloTriangleVulkan!"
+        )
+        window.installDefaultCallbacks()
     }
 
 
@@ -53,6 +63,7 @@ class HelloTriangle {
         create_instance()
         setupDebugMessenger()
         pickPhysicalDevice()
+        createLogicalDevice()
     }
 
         lateinit var physicalDevice: PhysicalDevice
@@ -61,7 +72,30 @@ class HelloTriangle {
         for (device in devices) {
             logger.info("deviceName: ${device.properties.deviceName}")
         }
-        physicalDevice = devices[0]
+        physicalDevice = devices[0] //choose correct one
+        assert(isDeviceSuitable(physicalDevice))
+    }
+
+    fun isDeviceSuitable(physicalDevice: PhysicalDevice): Boolean {
+        return physicalDevice.properties.deviceType == VkPhysicalDeviceType.DISCRETE_GPU
+                && physicalDevice.features.geometryShader
+                && findQueueFamilies(physicalDevice) != -1
+    }
+
+    var queueFamilyIndex = -1
+    //return index
+    fun findQueueFamilies(physicalDevice: PhysicalDevice): Int {
+        var find = -1
+        for ((i, queueFamily) in physicalDevice.queueFamilyProperties.withIndex()) {
+            logger.info("queueFamily support Graphics_bit")
+            logger.info("${queueFamily.queueFlags}")
+            if (queueFamily.queueFlags has VkQueueFlag.GRAPHICS_BIT) {
+                logger.info("+1")
+                find = i
+            }
+        }
+        queueFamilyIndex = find
+        return find
     }
 
     private fun setupDebugMessenger() {
@@ -91,7 +125,10 @@ class HelloTriangle {
 //            createInfo, null, longArrayOf()
 //        )
 //        debug? 不存在的
-
+//        DebugUtilsMessengerCallbackDataEXT
+        val callback: DebugUtilsMessengerCallbackEXT = { messageSeverity, messageTypes, callbackData, userData ->
+            false
+        }
 
 
     }
@@ -125,6 +162,26 @@ class HelloTriangle {
 
     }
 
+    lateinit var device: Device
+    lateinit var queue: Queue
+
+    fun createLogicalDevice() {
+        val deviceQueueCreateInfo = DeviceQueueCreateInfo(
+            queueFamilyIndex = queueFamilyIndex,
+            queuePriorities = floatArrayOf(Random.nextFloat())
+        )
+        val deviceCreateInfo = DeviceCreateInfo(
+            queueCreateInfo = deviceQueueCreateInfo,
+            enabledFeatures = physicalDevice.features
+        )
+        logger.info("phDevExt")
+        physicalDevice.enumerateDeviceExtensionProperties().forEach {
+            logger.info("${it.extensionName}")
+        }
+        device = physicalDevice.createDevice(deviceCreateInfo)
+        queue = device.getQueue(queueFamilyIndex)
+    }
+
     val enableValidationLayers = Checks.DEBUG
 
     fun getRequiredExtensions(): ArrayList<String> {
@@ -139,6 +196,7 @@ class HelloTriangle {
     private fun checkExt() {
         //required vs supported
         glfw.requiredInstanceExtensions.forEach(::println)
+
         println()
 
         val exts = vk.enumerateInstanceExtensionProperties(null)
@@ -153,22 +211,23 @@ class HelloTriangle {
     }
 
 
-    private fun mainLoop() {
-        while (!glfwWindowShouldClose(window)) {
-            glfwPollEvents()
-        }
-    }
+
 
     private fun cleanup() {
+        device.destroy()
         instance.destroy()
-        glfwDestroyWindow(window)
-        glfwTerminate()
+        window.destroy()
+        glfw.terminate()
     }
+
 
     init {
         initWindow()
         initVulkan()
-        mainLoop()
+        window.loop(Consumer {
+//            logger.info("a")
+        })
         cleanup()
     }
+
 }

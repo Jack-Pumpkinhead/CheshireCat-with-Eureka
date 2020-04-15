@@ -13,7 +13,6 @@ import uno.requiredInstanceExtensions
 import vkk.*
 import vkk.entities.*
 import vkk.extensions.*
-import vkk.identifiers.Device
 import vkk.identifiers.Instance
 import vkk.identifiers.PhysicalDevice
 import vkk.identifiers.Queue
@@ -34,127 +33,81 @@ class HelloTriangle {
 
     val logger = KotlinLogging.logger {}
 
-    lateinit var window: GlfwWindow
+    object struct_window {
+        val window: GlfwWindow
+        val width = 937
+        val height = 531
+        val title = "HelloTriangleVulkan!"
 
-    private val width = 937
-
-    private val height = 531
-
-    private fun initWindow() {
-        glfw.init()
-        glfw.windowHint {
-            api = None
-            resizable = false
+        init {
+            glfw.init()
+            glfw.windowHint {
+                api = None
+                resizable = false
+            }
+            window = GlfwWindow(width, height, title)
+            window.installDefaultCallbacks()
         }
-        window = GlfwWindow(
-            width = width,
-            height = height,
-            title = "HelloTriangleVulkan!"
-        )
-        window.installDefaultCallbacks()
+    }
+
+    init {
+        struct_window
+        initVulkan()
+        mainLoop()
+        cleanup()
     }
 
 
     private fun initVulkan() {
-        create_instance()
+        struct_instance
         setupDebugMessenger()
-        createSurface()
-        pickPhysicalDevice()
-        createLogicalDevice()
-        createSwapChain()
+        struct_surface
+        struct_physicaldevice
+        struct_LogicalDevice
+        struct_swapchain
+        struct_imageview
     }
 
-
-
-    private fun createSwapChain() {
-//        querySwapChainSupport(physicalDevice)
-        val format = chooseSwapSurfaceFormat(SurfaceSwapChainSupport.surfaceFormatsKHR)
-        val present = chooseSwapPresentMode(SurfaceSwapChainSupport.surfacePresentModesKHR)
-        val extent = chooseSwapExtent(SurfaceSwapChainSupport.surfaceCapabilitiesKHR)
-        var imageCount = SurfaceSwapChainSupport.surfaceCapabilitiesKHR.minImageCount + 1
-        if (SurfaceSwapChainSupport.surfaceCapabilitiesKHR.maxImageCount in 1 until imageCount) {
-            imageCount = SurfaceSwapChainSupport.surfaceCapabilitiesKHR.maxImageCount
-        }
-        val difIndices = QueueFamilyIndices.graphicsFamily != QueueFamilyIndices.presentFamily
-        swapchainCreateInfoKHR = SwapchainCreateInfoKHR(
-            surface = surface,
-            minImageCount = imageCount,
-            imageFormat = format.format,
-            imageColorSpace = format.colorSpace,
-            imageExtent = extent,
-            imageArrayLayers = 1,
-            imageUsage = VkImageUsage.COLOR_ATTACHMENT_BIT.i,
-            clipped = true,
-            compositeAlpha = VkCompositeAlphaKHR.OPAQUE_BIT,
-            imageSharingMode = if (difIndices) VkSharingMode.CONCURRENT else VkSharingMode.EXCLUSIVE,
-            queueFamilyIndices = if (difIndices) intArrayOf(
-                QueueFamilyIndices.graphicsFamily,
-                QueueFamilyIndices.presentFamily
-            ) else null,
-            preTransform = SurfaceSwapChainSupport.surfaceCapabilitiesKHR.currentTransform,
-            presentMode = present
+    object struct_instance {
+        val logger = KotlinLogging.logger {}
+        val applicationInfo: ApplicationInfo = ApplicationInfo(
+            applicationName = "Hello Triangle",
+            applicationVersion = VK_MAKE_VERSION(1, 0, 0),
+            apiVersion = VK_API_VERSION_1_0
         )
-        swapchain = device.createSwapchainKHR(swapchainCreateInfoKHR)
-
-        swapChainImages = device.getSwapchainImagesKHR(swapchain)
-        logger.info("swapChain ok")
-    }
-    lateinit var swapchainCreateInfoKHR: SwapchainCreateInfoKHR
-    var swapChainImages: VkImage_Array = VkImage_Array()
-
-    var swapchain: VkSwapchainKHR = VkSwapchainKHR.NULL
-    lateinit var physicalDevice: PhysicalDevice
-
-    private fun pickPhysicalDevice() {
-        val devices = instance.physicalDevices
-        for (device in devices) {
-            logger.info("deviceName: ${device.properties.deviceName}")
-        }
-        physicalDevice = devices[0] //choose correct one
-        assert(isDeviceSuitable(physicalDevice))
-    }
-
-
-    fun isDeviceSuitable(physicalDevice: PhysicalDevice): Boolean {
-
-        return physicalDevice.properties.deviceType == VkPhysicalDeviceType.DISCRETE_GPU
-                && physicalDevice.features.geometryShader
-                && findQueueFamilies(physicalDevice)
-                && checkDeviceExt(physicalDevice)
-                && querySwapChainSupport(physicalDevice)
-    }
-    val physicalDeviceRequiredExts = setOf(VK_KHR_SWAPCHAIN_EXTENSION_NAME)
-
-    private fun checkDeviceExt(physicalDevice: PhysicalDevice): Boolean {
-        val ext = physicalDevice.enumerateDeviceExtensionProperties().
-                    mapTo(mutableSetOf(), ExtensionProperties::extensionName)
-        return physicalDeviceRequiredExts.all { ext.contains(it) }
-    }
-    object QueueFamilyIndices {
-        var graphicsFamily = -1
-        var presentFamily = -1
-        fun allFind(): Boolean {
-            return graphicsFamily != -1 &&
-                    presentFamily != -1
-        }
-
-    }
-
-    //simply find the last one (of family) suit
-    fun findQueueFamilies(physicalDevice: PhysicalDevice): Boolean {
-
-        for ((i, queueFamily) in physicalDevice.queueFamilyProperties.withIndex()) {
-            if (queueFamily.queueFlags has VkQueueFlag.GRAPHICS_BIT) {
-                logger.info("queueFamily $i support Graphics_bit")
-                QueueFamilyIndices.graphicsFamily = i
-            }
-
-            if (physicalDevice.getSurfaceSupportKHR(i,surface)) {
-                logger.info("queueFamily $i support SurfaceSupport")
-                QueueFamilyIndices.presentFamily = i
+        val enabledLayerNames: List<String> = listOf(
+//            "VK_LAYER_LUNARG_standard_validation",
+//            "VK_LAYER_NV_optimus",
+//            "VK_LAYER_VALVE_steam_overlay"
+        )
+        val enabledExtensionNames: ArrayList<String> = glfw.requiredInstanceExtensions
+        init {
+            if (Checks.DEBUG) {
+                enabledExtensionNames += VK_EXT_DEBUG_UTILS_EXTENSION_NAME
             }
         }
-        return QueueFamilyIndices.allFind()
+        val createInfo: InstanceCreateInfo = InstanceCreateInfo(applicationInfo, enabledLayerNames, enabledExtensionNames)
+
+        val instance: Instance = Instance(createInfo)
+
+        init {
+            assert(instance.isValid)
+        }
+
+        private fun checkInstanceExt() {
+            logger.info("all exts:")
+            vk.enumerateInstanceExtensionProperties().forEach { logger.info("\t${it.extensionName}") }
+            logger.info("enabled exts:")
+            enabledExtensionNames.forEach{ logger.info("\t$it")}
+        }
+
+        private fun checkValidationLayerSupport() {
+            logger.info("all layer:")
+            vk.instanceLayerProperties.forEach { logger.info("\t${it.layerName}") }
+            logger.info("enabled layer:")
+            enabledLayerNames.forEach { logger.info("\t$it") }
+        }
+
     }
 
     private fun setupDebugMessenger() {
@@ -191,175 +144,183 @@ class HelloTriangle {
 
 
     }
+    object struct_surface {
 
-    lateinit var instance: Instance
+        val logger = KotlinLogging.logger {}
+        val surface: VkSurfaceKHR = struct_instance.instance.createSurface(struct_window.window)
 
-    // No correct layer yet.
-    // "Also ensure that your SDK version is at least 1.1.106.0 to support the VK_LAYER_KHRONOS_validation layer."
-    val validationLayers: List<String>
-        get() = listOf(
-            "VK_LAYER_LUNARG_standard_validation",
-            "VK_LAYER_NV_optimus",
-            "VK_LAYER_VALVE_steam_overlay"
-        )
-
-    private fun create_instance() {
-
-        val appInfo = ApplicationInfo(
-            applicationName = "Hello Triangle",
-            applicationVersion = VK_MAKE_VERSION(1, 0, 0),
-            apiVersion = VK_API_VERSION_1_0
-        )
-        val createInfo = InstanceCreateInfo(
-            applicationInfo = appInfo,
-            enabledExtensionNames = getRequiredExtensions(),
-            enabledLayerNames = validationLayers
-        )
-
-        instance = Instance(createInfo)
-//        vkinstance= VkInstance(instance.address(),instance.createInfo)
-        assert(instance.isValid)
-
-        checkInstanceExt()
-        println()
-        checkValidationLayerSupport()
-
-
+        init {
+            if (surface.isInvalid) {
+                logger.error("surface invalid!")
+            }
+        }
     }
+    object struct_physicaldevice {
+        val logger = KotlinLogging.logger {}
+        val physicalDevices: Array<PhysicalDevice> = struct_instance.instance.physicalDevices
+        val physicalDevice_wrapper = physicalDevices.asSequence().map(::PhysicalDeviceFilter).first {
+            logger.info("physicalDeviceName: ${it.name}")
+            it.good()
+        }
 
-    lateinit var device: Device
-    object Queues {
-        lateinit var graphicsQueue : Queue
-        lateinit var presentQueue: Queue
 
+        val physicalDevice: PhysicalDevice = physicalDevice_wrapper.pd
     }
-
-    fun createLogicalDevice() {
+    object struct_LogicalDevice {
         val deviceQueueCreateInfo_graphics = DeviceQueueCreateInfo(
-            queueFamilyIndex = QueueFamilyIndices.graphicsFamily,
+            queueFamilyIndex = struct_physicaldevice.physicalDevice_wrapper.surfaceSwapChainSupport.queuefamily_graphic,
             queuePriorities = floatArrayOf(Random.nextFloat())
         )
         val deviceQueueCreateInfo_presentation = DeviceQueueCreateInfo(
-            queueFamilyIndex = QueueFamilyIndices.presentFamily,
+            queueFamilyIndex = struct_physicaldevice.physicalDevice_wrapper.surfaceSwapChainSupport.queuefamily_present,
             queuePriorities = floatArrayOf(Random.nextFloat())
         )
         val deviceCreateInfo = DeviceCreateInfo(
             queueCreateInfos = listOf(deviceQueueCreateInfo_graphics, deviceQueueCreateInfo_presentation),
-            enabledExtensionNames = physicalDeviceRequiredExts,
-            enabledFeatures = physicalDevice.features
+            enabledExtensionNames = struct_physicaldevice.physicalDevice_wrapper.physicalDeviceRequiredExts,
+            enabledFeatures = struct_physicaldevice.physicalDevice.features
         )
-        logger.info("phDevExt")
-        physicalDevice.enumerateDeviceExtensionProperties().forEach {
-            logger.info("${it.extensionName}")
-        }
-//        logger.info("phyDevFeature")
-//        physicalDevice.features.
-        device = physicalDevice.createDevice(deviceCreateInfo)
-        Queues.graphicsQueue = device.getQueue(QueueFamilyIndices.graphicsFamily)
-        Queues.presentQueue = device.getQueue(QueueFamilyIndices.presentFamily)
+        val device = struct_physicaldevice.physicalDevice.createDevice(deviceCreateInfo)
+        val graphicsQueue : Queue = device.getQueue(deviceQueueCreateInfo_graphics.queueFamilyIndex)
+        val presentQueue: Queue = device.getQueue(deviceQueueCreateInfo_presentation.queueFamilyIndex)
     }
 
+    object struct_swapchain {
+        val sc = struct_physicaldevice.physicalDevice_wrapper.surfaceSwapChainSupport
+        val format = chooseSwapSurfaceFormat(sc.formats)
+        val present = chooseSwapPresentMode(sc.presentModes)
+        val extent = chooseSwapExtent(sc.capabilities)
+
+        var imageCount =
+            (sc.capabilities.minImageCount + 1).coerceAtMost(
+                sc.capabilities.maxImageCount
+            )
+        val swapchainCreateInfoKHR: SwapchainCreateInfoKHR = SwapchainCreateInfoKHR(
+            surface = struct_surface.surface,
+            minImageCount = imageCount,
+            imageFormat = format.format,
+            imageColorSpace = format.colorSpace,
+            imageExtent = extent,
+            imageArrayLayers = 1,
+            imageUsage = VkImageUsage.COLOR_ATTACHMENT_BIT.i,
+            clipped = true,
+            compositeAlpha = VkCompositeAlphaKHR.OPAQUE_BIT,
+            imageSharingMode = VkSharingMode.EXCLUSIVE,
+            preTransform = sc.capabilities.currentTransform,
+            presentMode = present
+        )
+
+        init {
+            if (sc.queuefamily_diff()) {
+                swapchainCreateInfoKHR.imageSharingMode = VkSharingMode.CONCURRENT
+                swapchainCreateInfoKHR.queueFamilyIndices = intArrayOf(
+                    sc.queuefamily_graphic,
+                    sc.queuefamily_present
+                )
+            }
+        }
+
+        val swapchain: VkSwapchainKHR = struct_LogicalDevice.device.createSwapchainKHR(swapchainCreateInfoKHR)
+
+        val swapChainImages: VkImage_Array = struct_LogicalDevice.device.getSwapchainImagesKHR(swapchain)
+        fun chooseSwapSurfaceFormat(surfaceFormats: List<SurfaceFormatKHR>): SurfaceFormatKHR =
+            surfaceFormats.firstOrNull {
+                it.format == VkFormat.B8G8R8A8_SRGB && it.colorSpace == VkColorSpaceKHR.SRGB_NONLINEAR_KHR
+            } ?: surfaceFormats[0]
+
+        fun chooseSwapPresentMode(presentmodes: VkPresentModeKHR_Array): VkPresentModeKHR =
+            if (presentmodes.array.contains(VkPresentModeKHR.MAILBOX.i)) VkPresentModeKHR.MAILBOX
+            else VkPresentModeKHR.FIFO
+        fun chooseSwapExtent(capabilitiesKHR: SurfaceCapabilitiesKHR): Extent2D {
+            return if (capabilitiesKHR.currentExtent.width != Int.MAX_VALUE) {
+                capabilitiesKHR.currentExtent
+            } else {
+                Extent2D(
+                    struct_window.width.coerceIn(capabilitiesKHR.minImageExtent.width, capabilitiesKHR.maxImageExtent.width),
+                    struct_window.height.coerceIn(capabilitiesKHR.minImageExtent.height, capabilitiesKHR.maxImageExtent.height)
+                )
+            }
+        }
+    }
+    object struct_imageview {
+
+
+        val imageViewCreateInfo = ImageViewCreateInfo(
+            viewType = VkImageViewType._2D,
+            format = struct_swapchain.swapchainCreateInfoKHR.imageFormat,
+            subresourceRange = ImageSubresourceRange(
+                aspectMask = VkImageAspect.COLOR_BIT.i,
+                baseMipLevel = 0,
+                levelCount = 1,
+                baseArrayLayer = 0,
+                layerCount = 1
+            )
+        )
+        val swapchainImageViews: VkImageView_Array = struct_LogicalDevice.device.createImageViewArray(
+            imageViewCreateInfo,
+            images = struct_swapchain.swapChainImages
+        )
+    }
     val enableValidationLayers = Checks.DEBUG
 
-    fun getRequiredExtensions(): ArrayList<String> {
-
-        val ext = glfw.requiredInstanceExtensions
-        if (enableValidationLayers) {
-            ext += VK_EXT_DEBUG_UTILS_EXTENSION_NAME
-        }
-        return ext
-    }
-    private fun checkInstanceExt() {
-        //required vs supported
-        glfw.requiredInstanceExtensions.forEach(::println)
-
-        println()
-
-        val exts = vk.enumerateInstanceExtensionProperties(null)
-        exts.forEach { println(it.extensionName) }
-    }
-
-
-
-
-    //TODO: check layer contain in this
-    fun checkValidationLayerSupport() {
-        val layers = vk.instanceLayerProperties
-        println("all layer:")
-        layers.forEach { println(it.layerName) }
-        println("should support layer:")
-        validationLayers.forEach { println(it)}
-    }
-
-
-    private fun cleanup() {
-        device.destroy(swapchain)
-        device.destroy()
-        if (surface == VkSurfaceKHR.NULL) {
-            logger.debug("surface is NULL")
-        }
-        instance.destroy(surface)
-        instance.destroy()
-        window.destroy()
-        glfw.terminate()
-    }
-    init {
-        initWindow()
-        initVulkan()
-        window.loop(Consumer {
+    fun mainLoop() {
+        //autoswap implied
+        struct_window.window.loop(Consumer {
 //            logger.info("a")
         })
-        cleanup()
-    }
-    var surface : VkSurfaceKHR = VkSurfaceKHR.NULL
-
-    fun createSurface() {
-//        VkWin32SurfaceCreateFlagsKHR
-//        window.hwnd
-        surface = instance.createSurface(window)
-    }
-    object SurfaceSwapChainSupport {
-        lateinit var surfaceCapabilitiesKHR: SurfaceCapabilitiesKHR
-        lateinit var surfaceFormatsKHR: ArrayList<SurfaceFormatKHR>
-        var surfacePresentModesKHR: VkPresentModeKHR_Array = VkPresentModeKHR_Array()
-        fun notEmpty() = surfaceFormatsKHR.isNotEmpty() && surfacePresentModesKHR.size > 0
-
     }
 
-    fun querySwapChainSupport(physicalDevice: PhysicalDevice): Boolean {
-        SurfaceSwapChainSupport.surfaceCapabilitiesKHR = physicalDevice.getSurfaceCapabilitiesKHR(surface)
-        SurfaceSwapChainSupport.surfaceFormatsKHR = physicalDevice.getSurfaceFormatsKHR(surface)
-        SurfaceSwapChainSupport.surfacePresentModesKHR = physicalDevice.getSurfacePresentModesKHR(surface)
-        return SurfaceSwapChainSupport.notEmpty()
+    private fun cleanup() {
+        struct_imageview.swapchainImageViews.indices.forEach { struct_LogicalDevice.device.destroy(struct_imageview.swapchainImageViews[it]) }
+//        swapChainImageViews.forEach { device.destroy(it) }
+        struct_LogicalDevice.device.destroy(struct_swapchain.swapchain)
+        struct_LogicalDevice.device.destroy()
+        struct_instance.instance.destroy(struct_surface.surface)
+        struct_instance.instance.destroy()
+        struct_window.window.destroy()
+        glfw.terminate()
     }
 
-    fun chooseSwapSurfaceFormat(surfaceFormats: List<SurfaceFormatKHR>): SurfaceFormatKHR {
-        for (sFormat in surfaceFormats) {
-            if (sFormat.format == VkFormat.B8G8R8A8_SRGB && sFormat.colorSpace == VkColorSpaceKHR.SRGB_NONLINEAR_KHR) {
-                return sFormat
-            }
-        }
-//        throw IllegalStateException()
-        return surfaceFormats[0]
-    }
+    // No correct layer yet.
+    // "Also ensure that your SDK version is at least 1.1.106.0 to support the VK_LAYER_KHRONOS_validation layer."
+    class PhysicalDeviceFilter(val pd: PhysicalDevice) {
+        val name = pd.properties.deviceName
 
-    fun chooseSwapPresentMode(presentmodes: VkPresentModeKHR_Array): VkPresentModeKHR {
-        for (i in presentmodes.indices) {
-            if (presentmodes[i] == VkPresentModeKHR.MAILBOX) {
-                return presentmodes[i]
-            }
-        }
-        return VkPresentModeKHR.FIFO
-    }
 
-    fun chooseSwapExtent(capabilitiesKHR: SurfaceCapabilitiesKHR): Extent2D {
-        return if (capabilitiesKHR.currentExtent.width != Int.MAX_VALUE) {
-            capabilitiesKHR.currentExtent
-        } else {
-            Extent2D(
-                width.coerceIn(capabilitiesKHR.minImageExtent.width, capabilitiesKHR.maxImageExtent.width),
-                height.coerceIn(capabilitiesKHR.minImageExtent.height, capabilitiesKHR.maxImageExtent.height)
-            )
+        val type = pd.properties.deviceType
+        val supportGeometryShader = pd.features.geometryShader
+        val exts = pd.enumerateDeviceExtensionProperties()
+
+        val extNames = exts.map(ExtensionProperties::extensionName)
+
+        val surfaceSwapChainSupport = SurfaceSwapChainSupport(pd, struct_surface.surface)
+
+        fun good(): Boolean =
+            type == VkPhysicalDeviceType.DISCRETE_GPU &&
+                    supportGeometryShader &&
+                    extNames.containsAll(physicalDeviceRequiredExts) &&
+                    surfaceSwapChainSupport.notEmpty()
+        val physicalDeviceRequiredExts = setOf(VK_KHR_SWAPCHAIN_EXTENSION_NAME)
+        val logger = KotlinLogging.logger {}
+
+        fun printExtNames() {
+            logger.info("exts of physical device: $name")
+            extNames.forEach { logger.info("\t$it") }
         }
     }
+
+    class SurfaceSwapChainSupport(physicalDevice: PhysicalDevice, surface: VkSurfaceKHR) {
+
+        val capabilities: SurfaceCapabilitiesKHR = physicalDevice getSurfaceCapabilitiesKHR surface
+
+        val formats: ArrayList<SurfaceFormatKHR> = physicalDevice getSurfaceFormatsKHR      surface
+
+        val presentModes: VkPresentModeKHR_Array = physicalDevice getSurfacePresentModesKHR surface
+        val queuefamily_graphic = physicalDevice.queueFamilyProperties.indexOfFirst { it.queueFlags has VkQueueFlag.GRAPHICS_BIT }
+        val queuefamily_present = physicalDevice.queueFamilyProperties.indices.indexOfFirst { physicalDevice.getSurfaceSupportKHR(it, surface) }
+        fun notEmpty() =
+            formats.isNotEmpty() && presentModes.size > 0 && queuefamily_graphic != -1 && queuefamily_present != -1
+        fun queuefamily_diff() = queuefamily_graphic != queuefamily_present
+    }
+
 }

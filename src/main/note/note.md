@@ -7,3 +7,4 @@
     
 #### note/quote
     It is important that we only try to query for swap chain support after verifying that the extension is available.
+    再不改就改不动了。。

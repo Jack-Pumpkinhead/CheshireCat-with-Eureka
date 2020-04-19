@@ -171,6 +171,10 @@ dependencies {
     implementation("graphics.scenery:spirvcrossj:0.7.0-1.1.106.0"){
         exclude("com.github.kotlin-graphics.uno-sdk")
     }
+    runtimeOnly("graphics.scenery", "spirvcrossj", "0.7.0-1.1.106.0", classifier = lwjglNatives) {
+        exclude("com.github.kotlin-graphics.uno-sdk")
+    }
+
 
 }
 

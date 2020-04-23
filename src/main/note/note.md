@@ -1,6 +1,7 @@
 #### bug fix
     Int.has Flag* to test bit
     flip when finish putting data into buffer
+    SUPER debug mode in (vkk)DEBUG
 
 #### Todo list: 
     //use log4j2

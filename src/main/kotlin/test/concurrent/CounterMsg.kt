@@ -1,4 +1,4 @@
-package concurrent
+package test.concurrent
 
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.actor
@@ -7,10 +7,10 @@ import kotlinx.coroutines.channels.actor
  * Created by CowardlyLion on 2020/4/8 14:55
  */
 
-fun main() = runBlocking<Unit> {
+fun mian() = runBlocking<Unit> {
     val counter = counterActor()
     withContext(Dispatchers.Default) {
-        massiveRun {
+        massiveRun1 {
             counter.send(IncCounter)
         }
     }

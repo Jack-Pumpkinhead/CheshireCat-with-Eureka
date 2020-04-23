@@ -47,7 +47,7 @@ class HelloTriangle {
                 api = None
                 resizable = false
             }
-            window = GlfwWindow(width, height, title)
+            window = GlfwWindow(width, height, title, installCallbacks = true)
             window.installDefaultCallbacks()
         }
     }
@@ -74,6 +74,10 @@ class HelloTriangle {
         struct_commandpool
         struct_commandbuffers
         struct_semaphores
+
+        logger.info {
+            "maxImageCount: ${struct_swapchain.sc.capabilities.maxImageCount}"
+        }
     }
 
     object struct_instance {
@@ -120,6 +124,12 @@ class HelloTriangle {
 
     private fun setupDebugMessenger() {
         if(!Checks.DEBUG) return
+
+//        DEBUG = true  //use for super debug
+        VkResult
+//        VULKAN_NO_EXCEPTIONS = true
+
+
 //        VkDebugUtilsMessengerEXT_Array()
 //        VkStructureType.DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT.
 //        val createInfo= DebugReportCallbackCreateInfo(
@@ -244,12 +254,14 @@ class HelloTriangle {
                 capabilitiesKHR.currentExtent
             } else {
                 Extent2D(
-                    struct_window.width.coerceIn(capabilitiesKHR.minImageExtent.width, capabilitiesKHR.maxImageExtent.width),
-                    struct_window.height.coerceIn(capabilitiesKHR.minImageExtent.height, capabilitiesKHR.maxImageExtent.height)
+                    struct_window.window.framebufferSize
+//                    struct_window.width.coerceIn(capabilitiesKHR.minImageExtent.width, capabilitiesKHR.maxImageExtent.width),
+//                    struct_window.height.coerceIn(capabilitiesKHR.minImageExtent.height, capabilitiesKHR.maxImageExtent.height)
                 )
             }
         }
     }
+
     object struct_imageview {
         val logger = KotlinLogging.logger { }
 
@@ -596,6 +608,24 @@ class HelloTriangle {
     var currentFrame = 0
 
     fun drawFrame() {
+
+        //wait f inFlightFences[index]
+
+        //nextimage signal s imageAvailable[index]
+
+        //wait f imagesInFlight[imageIndex]
+        //imagesInFlight[imageIndex] = inFlightFences[index]
+        //reset f inFlightFences[index]
+
+        //submit wait s imageAvailable[index]
+        //submit signal s renderFinished[index]
+        //submit signal f inFlightFences[index]
+
+        //present wait s renderFinished[index]
+
+        //unnecessary complication due to individual fence
+        //fence should have one per image
+
         //index of swapchainImages
         val index = currentFrame % struct_semaphores.max_frames_in_flight
         struct_logicaldevice.device.waitForFences(
@@ -608,7 +638,15 @@ class HelloTriangle {
             swapchain = struct_swapchain.swapchain,
             timeout = -1L,
             semaphore = struct_semaphores.imageAvailable[index],
-            fence = VkFence.NULL
+            fence = VkFence.NULL,
+            check = {
+                if (it == VkResult.ERROR_OUT_OF_DATE_KHR) {
+                    //recreate SwapChain
+                    logger.error { it.description }
+                } else if (it != VkResult.SUCCESS && it != VkResult.SUBOPTIMAL_KHR) {
+                    logger.error { it.description }
+                }
+            }
 //            check = ::defaultCheck
         )
 
@@ -650,10 +688,16 @@ class HelloTriangle {
         )
 //        logger.info {
 //            val s = "present: "
-        struct_logicaldevice.presentQueue.presentKHR(presentInfoKHR).description
-
-
-
+        struct_logicaldevice.presentQueue.presentKHR(presentInfoKHR).also {
+            if (it == VkResult.ERROR_OUT_OF_DATE_KHR || it == VkResult.SUBOPTIMAL_KHR) {
+                //recreate swapchain
+            }else if (it != VkResult.SUCCESS) {
+                throw RuntimeException("present swapchain fail")
+            }
+        }
+    //also recreate swapchain when framebuffer resized
+//        glfw.waitEvents()
+//window minimization result in 0 size, wait to pause
 
 //        logger.info {
             currentFrame++
@@ -714,10 +758,9 @@ class HelloTriangle {
     class SurfaceSwapChainSupport(physicalDevice: PhysicalDevice, surface: VkSurfaceKHR) {
 
         val capabilities: SurfaceCapabilitiesKHR = physicalDevice getSurfaceCapabilitiesKHR surface
-
         val formats: ArrayList<SurfaceFormatKHR> = physicalDevice getSurfaceFormatsKHR      surface
-
         val presentModes: VkPresentModeKHR_Array = physicalDevice getSurfacePresentModesKHR surface
+
         val queuefamily_graphic = physicalDevice.queueFamilyProperties.indexOfFirst { it.queueFlags has VkQueueFlag.GRAPHICS_BIT }
         val queuefamily_present = physicalDevice.queueFamilyProperties.indices.indexOfFirst { physicalDevice.getSurfaceSupportKHR(it, surface) }
         fun notEmpty() =

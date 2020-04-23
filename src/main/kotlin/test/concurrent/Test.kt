@@ -1,9 +1,8 @@
-package concurrent
+package test.concurrent
 
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import java.util.concurrent.atomic.AtomicInteger
 import kotlin.system.measureTimeMillis
 
 /**
@@ -11,24 +10,24 @@ import kotlin.system.measureTimeMillis
  */
 
 //@Volatile
-//var counter = AtomicInteger()
-var counter = 0
+//var test.getCounter = AtomicInteger()
+var counter2 = 0
 
 //val counterContext = newSingleThreadContext("CounterContext")
 val mutex = Mutex()
 
-fun main() = runBlocking {
+fun mian2() = runBlocking {
     withContext(Dispatchers.Default){
-        massiveRun {
+        massiveRun1 {
             mutex.withLock {
-                counter++
+                counter2++
             }
         }
     }
-    println("Counter = $counter")
+    println("Counter = $counter2")
 }
 
-suspend fun massiveRun(action: suspend () -> Unit) {
+suspend fun massiveRun1(action: suspend () -> Unit) {
     val n = 100
     val k = 1000
     val time= measureTimeMillis {

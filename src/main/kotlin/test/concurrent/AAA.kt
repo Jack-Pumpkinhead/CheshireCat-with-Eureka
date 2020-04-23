@@ -1,3 +1,5 @@
+package test.concurrent
+
 import kotlinx.coroutines.*
 import kotlin.system.measureTimeMillis
 
@@ -90,7 +92,7 @@ suspend fun failed(): Int = coroutineScope {
         }
         return@coroutineScope one.await()
     } finally {
-        println("failed finally")
+        println("test.concurrent.failed finally")
     }
 
 }

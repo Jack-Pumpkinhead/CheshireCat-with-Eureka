@@ -35,6 +35,8 @@ class FrameLoop(val univ: Univ, val window: OzWindow) {
 
             pauseForSize()
 
+            //where is getSwapchainStatus?
+//            univ.vulkan.device.device.sw
             if (window.resized) {
                 univ.vulkan.recreateRenderpass(window.framebufferSize)
             }

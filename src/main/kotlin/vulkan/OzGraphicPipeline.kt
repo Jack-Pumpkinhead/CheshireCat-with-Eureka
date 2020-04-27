@@ -22,9 +22,9 @@ class OzGraphicPipeline(
     val pipelineLayout: VkPipelineLayout
     val graphicsPipelines: VkPipeline_Array
     init {
-        val vertCI = ShaderModuleCreateInfo(code = LoaderGLSL.ofVert("hellotriangle").buffer)
+        val vertCI = ShaderModuleCreateInfo(code = LoaderGLSL.ofVert("hellobuffer").buffer)
         val vert = device.device.createShaderModule(vertCI)
-        val fragCI = ShaderModuleCreateInfo(code = LoaderGLSL.ofFrag("hellotriangle").buffer)
+        val fragCI = ShaderModuleCreateInfo(code = LoaderGLSL.ofFrag("hellobuffer").buffer)
         val frag: VkShaderModule = device.device.createShaderModule(fragCI)
 
         assert(vert.isValid)
@@ -43,9 +43,11 @@ class OzGraphicPipeline(
         )
 
 
+        val temp = OzVertexInput()
+
         val vertexInputStateCI = PipelineVertexInputStateCreateInfo(
-            vertexBindingDescriptions = null,
-            vertexAttributeDescriptions = null
+            vertexBindingDescriptions = arrayOf(temp.bindingDescription),
+            vertexAttributeDescriptions = arrayOf(temp.posAD, temp.colorAD)
         )
 
         val inputAssemblyStateCI = PipelineInputAssemblyStateCreateInfo(

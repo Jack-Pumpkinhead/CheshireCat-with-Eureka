@@ -1,0 +1,39 @@
+package vulkan.drawing
+
+import kool.BYTES
+import mu.KotlinLogging
+import vkk.VkFormat
+import vkk.VkVertexInputRate
+import vkk.vk10.structs.VertexInputAttributeDescription
+import vkk.vk10.structs.VertexInputBindingDescription
+import vulkan.OzVertexBuffer
+
+class OzVertexInput33 {
+
+    companion object {
+
+        val logger = KotlinLogging.logger { }
+
+        fun bytes(vertexCount: Int) = (3 + 3) * Float.BYTES * vertexCount
+
+    }
+
+    val bindingDescription = VertexInputBindingDescription(
+        binding = 0,
+        stride = (3 + 3) * Float.BYTES,
+        inputRate = VkVertexInputRate.VERTEX
+    )
+    val posAD = VertexInputAttributeDescription(
+        binding = 0,
+        location = 0,
+        format = VkFormat.R32G32B32_SFLOAT,
+        offset = 0
+    )
+    val colorAD = VertexInputAttributeDescription(
+        binding = 0,
+        location = 1,
+        format = VkFormat.R32G32B32_SFLOAT,
+        offset = 3 * Float.BYTES
+    )
+
+}

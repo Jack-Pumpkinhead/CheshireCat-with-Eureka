@@ -4,11 +4,9 @@ import mu.KotlinLogging
 import vkk.VkCommandBufferLevel
 import vkk.VkPipelineBindPoint
 import vkk.VkSubpassContents
+import vkk.entities.VkDeviceSize
 import vkk.identifiers.CommandBuffer
-import vkk.vk10.allocateCommandBuffers
-import vkk.vk10.begin
-import vkk.vk10.beginRenderPass
-import vkk.vk10.freeCommandBuffers
+import vkk.vk10.*
 import vkk.vk10.structs.*
 
 class OzCommandBuffers(
@@ -29,7 +27,7 @@ class OzCommandBuffers(
 
         commandbuffers = device.device.allocateCommandBuffers(
             allocateInfo = CommandBufferAllocateInfo(
-                commandPool = commandPool.commandpool,
+                commandPool = commandPool.graphic,
                 level = VkCommandBufferLevel.PRIMARY,
                 commandBufferCount = framebuffers.framebuffers.size
             )
@@ -59,6 +57,11 @@ class OzCommandBuffers(
                 pipelineBindPoint = VkPipelineBindPoint.GRAPHICS,
                 pipeline = pipeline.graphicsPipelines[0]
             )
+            it.bindVertexBuffers(
+                buffer = ozVulkan.vertexBuffer_device_local.buffer,
+//                buffer = ozVulkan.vertexBuffer.buffer,
+                offset = VkDeviceSize(0)
+            )
             it.draw(
                 vertexCount = 3,
                 instanceCount = 1,
@@ -72,7 +75,7 @@ class OzCommandBuffers(
     }
 
     fun destroy() {
-        device.device.freeCommandBuffers(commandPool.commandpool, commandbuffers)
+        device.device.freeCommandBuffers(commandPool.graphic, commandbuffers)
     }
 
 }

@@ -5,10 +5,17 @@ import com.google.common.graph.Traverser
 import game.main.CleanUpMethod
 import game.main.Univ
 import game.window.OzWindow
+import glm_.L
 import glm_.vec2.Vec2i
+import kool.BYTES
+import kool.Stack
+import kool.remSize
 import mu.KotlinLogging
-import uno.glfw.glfw
-import vkk.vk10.structs.Extent2D
+import org.lwjgl.system.MemoryUtil
+import org.lwjgl.util.vma.Vma
+import vkk.entities.VkDeviceSize
+import vkk.memCopy
+import vkk.vk10.mappedMemory
 import vulkan.util.LoaderGLSL
 import vulkan.util.SurfaceSwapchainSupport
 
@@ -21,13 +28,13 @@ class OzVulkan(val univ: Univ, val window: OzWindow) {
     val instance = OzInstance(this)
     val surface = OzSurface(this, instance, window)
     var physicalDevice = OzPhysicalDevice(this, instance, instance.physicalDevices[0])
-    var surfaceSupport = SurfaceSwapchainSupport(physicalDevice.pd, surface.surface)
+    var surfaceSupport = SurfaceSwapchainSupport(physicalDevice, surface.surface)
 
     init {
         var i = 1
         while (!(physicalDevice.supported() && surfaceSupport.supported()) && i < instance.physicalDevices.size) {
             physicalDevice = OzPhysicalDevice(this, instance, instance.physicalDevices[i])
-            surfaceSupport = SurfaceSwapchainSupport(physicalDevice.pd, surface.surface)
+            surfaceSupport = SurfaceSwapchainSupport(physicalDevice, surface.surface)
             i++
         }
         if (!(physicalDevice.supported() && surfaceSupport.supported())) {
@@ -49,6 +56,45 @@ class OzVulkan(val univ: Univ, val window: OzWindow) {
 
     var commandPool = OzCommandPool(this, device, surfaceSupport)
 
+//    var vertexBuffer = OzVertexBuffer.of(device, (3 + 3) * Float.BYTES * 3)
+
+//    var vertexBuffer = OzVertexBuffer(this, device, physicalDevice, (3 + 3) * Float.BYTES * 3)
+
+    var vertexBuffer_staging = OzVertexBuffer.ofStaging_staging(device, (3 + 3) * Float.BYTES * 3)
+    var vertexBuffer_device_local = OzVertexBuffer.ofStaging_device_local(device, (3 + 3) * Float.BYTES * 3)
+
+
+    init {
+        fillBuffer()
+    }
+
+    fun fillBuffer() {
+        Stack{
+            val arr = it.floats(
+                // position    color
+                +0.0f, -0.5f, +0f, 1f, 0f, 0f,
+                +0.5f, +0.5f, +0f, 0f, 1f, 0f,
+                -0.5f, 0.5f, +0f, 0f, 0f, 1f)
+
+            logger.info {
+                "arr.remSize: ${arr.remSize}"
+            }
+            device.device.mappedMemory(
+                memory = vertexBuffer_staging.memory,
+                offset = VkDeviceSize(0),
+                size = VkDeviceSize(vertexBuffer_staging.bytes),
+                flags = 0
+            ) {
+                memCopy(MemoryUtil.memAddress(arr), it, VkDeviceSize(arr.remSize.L))
+            }
+        }
+
+        commandPool.copyBuffer(vertexBuffer_staging, vertexBuffer_device_local, vertexBuffer_staging.bytes)
+        cleanup(vertexBuffer_staging::destroy)
+//        vertexBuffer_staging.destroy()
+    }
+
+
     var commandBuffers = OzCommandBuffers(this, device, commandPool, framebuffer, swapchain, pipeline, renderpass)
 
     var sync = OzSyncObject(this, device, swapchain)
@@ -56,6 +102,9 @@ class OzVulkan(val univ: Univ, val window: OzWindow) {
 
     fun recreateRenderpass(windowSize: Vec2i) {
 
+        val newSwapchain = OzSwapchain(this, surfaceSupport, device, windowSize, swapchain.swapchain)
+
+        device.device.waitIdle()
         cleanup(framebuffer::destroy)
         commandBuffers.destroy()
         cleanup(pipeline::destroy)
@@ -63,7 +112,7 @@ class OzVulkan(val univ: Univ, val window: OzWindow) {
         cleanup(imageViews::destroy)
         cleanup(swapchain::destroy)
 
-        swapchain = OzSwapchain(this, surfaceSupport, device, windowSize)
+        swapchain = newSwapchain
 
         imageViews = OzImageViews(this, device, swapchain)
 
@@ -94,5 +143,12 @@ class OzVulkan(val univ: Univ, val window: OzWindow) {
             cleanup(cleanups.nodes().first())
         }
         LoaderGLSL.destroy()
+    }
+
+    init {
+//        Vma.
+        logger.info {
+            "maxMemoryAllocationCount: ${physicalDevice.properties.limits.maxMemoryAllocationCount}"
+        }
     }
 }

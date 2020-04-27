@@ -19,7 +19,7 @@ class OzSwapchain(
     val sss: SurfaceSwapchainSupport,
     val device: OzDevice,
     windowSize: Vec2i,
-    var oldSwapchain: OzSwapchain? = null
+    oldSwapchain: VkSwapchainKHR = VkSwapchainKHR.NULL
 ) {
 
     val logger = KotlinLogging.logger { }
@@ -49,25 +49,22 @@ class OzSwapchain(
         imageSharingMode = VkSharingMode.EXCLUSIVE,
         preTransform = sss.capabilities.currentTransform,
         presentMode = present,
-        oldSwapchain = oldSwapchain?.swapchain ?: VkSwapchainKHR.NULL
+        oldSwapchain = oldSwapchain
     )
 
     val swapchain: VkSwapchainKHR
 
     init {
-        if (sss.queuefamily_graphic != sss.queuefamily_present) {
+//        if (sss.queuefamily_graphic != sss.queuefamily_present) {
             swapchainCIKHR.imageSharingMode = VkSharingMode.CONCURRENT
             swapchainCIKHR.queueFamilyIndices = intArrayOf(
                 sss.queuefamily_graphic,
-                sss.queuefamily_present
+//                sss.queuefamily_present,
+                sss.queuefamily_transfer
             )
-        }
+//        }
 
-        if (oldSwapchain != null) {
-            device.device.waitIdle()
-        }
         swapchain = device.device.createSwapchainKHR(swapchainCIKHR)
-        oldSwapchain = null
     }
     val images: VkImage_Array = device.device.getSwapchainImagesKHR(swapchain)
 

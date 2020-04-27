@@ -5,6 +5,7 @@ import glm_.vec2.Vec2i
 import mu.KotlinLogging
 import uno.glfw.GlfwMonitor
 import uno.glfw.GlfwWindow
+import uno.glfw.Key
 import uno.glfw.glfw
 import vkk.vk10.structs.Extent2D
 
@@ -33,5 +34,12 @@ class OzWindow(
 
     override fun onWindowResized(newSize: Vec2i) {
         resized = true
+    }
+
+    override fun onKeyPressed(key: Key, mods: Int) {
+        when (key) {
+            Key.ESCAPE -> shouldClose = true
+            else -> return
+        }
     }
 }

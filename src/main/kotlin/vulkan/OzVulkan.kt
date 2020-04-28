@@ -5,17 +5,13 @@ import com.google.common.graph.Traverser
 import game.main.CleanUpMethod
 import game.main.Univ
 import game.window.OzWindow
-import glm_.L
 import glm_.vec2.Vec2i
-import kool.BYTES
-import kool.Stack
-import kool.remSize
+import kool.*
 import mu.KotlinLogging
-import org.lwjgl.system.MemoryUtil
-import org.lwjgl.util.vma.Vma
+import vkk.entities.VkBuffer
 import vkk.entities.VkDeviceSize
 import vkk.memCopy
-import vkk.vk10.mappedMemory
+import vulkan.drawing.OzVMA
 import vulkan.util.LoaderGLSL
 import vulkan.util.SurfaceSwapchainSupport
 
@@ -44,6 +40,9 @@ class OzVulkan(val univ: Univ, val window: OzWindow) {
 
     val device = OzDevice(this, physicalDevice, surfaceSupport)
 
+    val vma = OzVMA(this, physicalDevice, device)
+
+
     var swapchain = OzSwapchain(this, surfaceSupport, device, window.framebufferSize)
 
     var imageViews = OzImageViews(this, device, swapchain)
@@ -60,16 +59,15 @@ class OzVulkan(val univ: Univ, val window: OzWindow) {
 
 //    var vertexBuffer = OzVertexBuffer(this, device, physicalDevice, (3 + 3) * Float.BYTES * 3)
 
-    var vertexBuffer_staging = OzVertexBuffer.ofStaging_staging(device, (3 + 3) * Float.BYTES * 3)
-    var vertexBuffer_device_local = OzVertexBuffer.ofStaging_device_local(device, (3 + 3) * Float.BYTES * 3)
-
+    var vb_s = vma.of_staging((3 + 3) * Float.BYTES * 3)
+    var vb_d = vma.of_VertexBuffer_device_local((3 + 3) * Float.BYTES * 3)
 
     init {
         fillBuffer()
     }
 
     fun fillBuffer() {
-        Stack{
+        /*Stack{
             val arr = it.floats(
                 // position    color
                 +0.0f, -0.5f, +0f, 1f, 0f, 0f,
@@ -87,11 +85,27 @@ class OzVulkan(val univ: Univ, val window: OzWindow) {
             ) {
                 memCopy(MemoryUtil.memAddress(arr), it, VkDeviceSize(arr.remSize.L))
             }
+        }*/
+//        commandPool.copyBuffer(vertexBuffer_staging, vertexBuffer_device_local, vertexBuffer_staging.bytes)
+//        cleanup(vertexBuffer_staging::destroy)
+//        vertexBuffer_staging.destroy()
+        Stack{
+            val arr = it.floats(
+                // position    color
+                +0.0f, -0.5f, +0f, 1f, 0f, 0f,
+                +0.5f, +0.5f, +0f, 0f, 1f, 0f,
+                -0.5f, 0.5f, +0f, 0f, 0f, 1f)
+
+            logger.info {
+                "arr.remSize: ${arr.remSize}"
+            }
+            vb_s.withMap {
+                memCopy(arr.adr, it, VkDeviceSize(arr.remSize))
+            }
+            commandPool.copyBuffer(VkBuffer(vb_s.pBuffer), VkBuffer(vb_d.pBuffer), arr.remSize)
+
         }
 
-        commandPool.copyBuffer(vertexBuffer_staging, vertexBuffer_device_local, vertexBuffer_staging.bytes)
-        cleanup(vertexBuffer_staging::destroy)
-//        vertexBuffer_staging.destroy()
     }
 
 
@@ -146,7 +160,9 @@ class OzVulkan(val univ: Univ, val window: OzWindow) {
     }
 
     init {
+//        VmaAllocationCreateInfo
 //        Vma.
+//        Vma.vmaCreateBuffer()
         logger.info {
             "maxMemoryAllocationCount: ${physicalDevice.properties.limits.maxMemoryAllocationCount}"
         }

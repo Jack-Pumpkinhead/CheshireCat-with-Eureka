@@ -4,6 +4,7 @@ import mu.KotlinLogging
 import vkk.VkCommandBufferLevel
 import vkk.VkPipelineBindPoint
 import vkk.VkSubpassContents
+import vkk.entities.VkBuffer
 import vkk.entities.VkDeviceSize
 import vkk.identifiers.CommandBuffer
 import vkk.vk10.*
@@ -58,10 +59,11 @@ class OzCommandBuffers(
                 pipeline = pipeline.graphicsPipelines[0]
             )
             it.bindVertexBuffers(
-                buffer = ozVulkan.vertexBuffer_device_local.buffer,
+                buffer = VkBuffer(ozVulkan.vb_d.pBuffer),
 //                buffer = ozVulkan.vertexBuffer.buffer,
                 offset = VkDeviceSize(0)
             )
+
             it.draw(
                 vertexCount = 3,
                 instanceCount = 1,

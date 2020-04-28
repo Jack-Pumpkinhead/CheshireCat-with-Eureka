@@ -17,6 +17,7 @@ import vkk.vk10.structs.MemoryAllocateInfo
 import vkk.vk10.structs.MemoryRequirements
 import java.lang.RuntimeException
 
+@Deprecated("Use vma")
 class OzVertexBuffer(
     val ozVulkan: OzVulkan,
     val device: OzDevice,

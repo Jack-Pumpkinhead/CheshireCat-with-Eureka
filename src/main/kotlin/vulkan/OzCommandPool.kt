@@ -5,6 +5,7 @@ import vkk.VkCommandBufferLevel
 import vkk.VkCommandBufferUsage
 import vkk.VkCommandPoolCreate
 import vkk.VkCommandPoolCreateFlags
+import vkk.entities.VkBuffer
 import vkk.entities.VkCommandPool
 import vkk.entities.VkDeviceSize
 import vkk.vk10.*
@@ -39,7 +40,9 @@ class OzCommandPool(val ozVulkan: OzVulkan, val device: OzDevice, val surfaceSup
         device.device.destroy(graphic)
     }
 
-    fun copyBuffer(src: OzVertexBuffer, dst: OzVertexBuffer, size: Int) {
+    fun copyBuffer(src: Long, dst: Long, size: Int) = copyBuffer(VkBuffer(src), VkBuffer(dst), size)
+
+    fun copyBuffer(src: VkBuffer, dst: VkBuffer, size: Int) {
         val cbs = device.device.allocateCommandBuffers(
             allocateInfo = CommandBufferAllocateInfo(
                 commandPool = transfer,
@@ -47,19 +50,22 @@ class OzCommandPool(val ozVulkan: OzVulkan, val device: OzDevice, val surfaceSup
                 commandBufferCount = 1
             )
         )
-        cbs[0].begin(CommandBufferBeginInfo(
-            flags = VkCommandBufferUsage.ONE_TIME_SUBMIT_BIT.i
-        ))
+        cbs[0].begin(
+            CommandBufferBeginInfo(
+                flags = VkCommandBufferUsage.ONE_TIME_SUBMIT_BIT.i
+            )
+        )
         val bufferCopy = BufferCopy(
             srcOffset = VkDeviceSize(0),
             dstOffset = VkDeviceSize(0),
             size = VkDeviceSize(size)
         )
         cbs[0].copyBuffer(
-            srcBuffer = src.buffer,
-            dstBuffer = dst.buffer,
+            srcBuffer = src,
+            dstBuffer = dst,
             regions = arrayOf(bufferCopy)
         )
+
         cbs[0].end()
         val submitInfo = SubmitInfo(
             commandBuffers = cbs
@@ -69,5 +75,7 @@ class OzCommandPool(val ozVulkan: OzVulkan, val device: OzDevice, val surfaceSup
         device.device.freeCommandBuffers(transfer,cbs)
 
     }
+
+
 
 }

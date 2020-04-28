@@ -7,6 +7,7 @@ import land.oz.turorial.HelloTriangle
 import mu.KotlinLogging
 import org.lwjgl.vulkan.VK10
 import vkk.VkResult
+import vkk.entities.VkEvent
 import vkk.entities.VkFence
 import vkk.entities.VkSemaphore_Array
 import vkk.entities.VkSwapchainKHR_Array
@@ -14,6 +15,7 @@ import vkk.extensions.PresentInfoKHR
 import vkk.extensions.acquireNextImageKHR
 import vkk.extensions.presentKHR
 import vkk.vk10.resetFences
+import vkk.vk10.structs.EventCreateInfo
 import vkk.vk10.structs.SubmitInfo
 import vkk.vk10.submit
 import vkk.vk10.waitForFences
@@ -64,6 +66,7 @@ class DrawFrame(val ozVulkan: OzVulkan, val device: OzDevice, val frameLoop: Fra
         )
         // That means that theoretically the implementation can already start executing our vertex shader and such while the image is not yet available.
         // Each entry in the waitStages array corresponds to the semaphore with the same index in pWaitSemaphores.
+
 
 
         device.device.resetFences(ozVulkan.sync.inFlightFences[index])

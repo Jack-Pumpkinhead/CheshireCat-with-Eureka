@@ -102,7 +102,7 @@ class OzFramebuffer(
         offsets: VkDeviceSize_Array = VkDeviceSize_Array(buffers.size) { VkDeviceSize(0) },
         indexBuffer: VkBuffer,
         count: Int
-    ): CommandBuffer = OzCB.recordDraw(
+    ): CommandBuffer = OzCB.recordDrawIndexed(
         cb,
         renderpass.renderpass,
         framebuffer,

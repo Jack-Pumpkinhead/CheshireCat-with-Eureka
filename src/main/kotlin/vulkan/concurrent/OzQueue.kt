@@ -94,42 +94,12 @@ class OzQueue(val ozVulkan: OzVulkan, val device: OzDevice, val queueFamilyIndex
     }
 
 
-//    val workers = ozVulkan.surfaceSupport.imageCount - 1    //max num of drawing images at the same time
-
-//    val workingFence: List<VkFence> = List(workers) {device.signaledFence() }
-//    val workingSemaphore: List<VkSemaphore> = List(workers) { device.semaphore() }
-//    val workingFenceArray = VkFence_Array(workingFence)
-
-    //worker on image
     val submitF: Array<VkFence> = Array(ozVulkan.surfaceSupport.imageCount) { device.signaledFence() }
-    val presentJ: Array<CompletableJob> = Array(ozVulkan.surfaceSupport.imageCount) { Job() }
     val submitS: Array<VkSemaphore> = Array(ozVulkan.surfaceSupport.imageCount) { device.semaphore() }
     val acquiredS = device.semaphore()
-/*
-    fun findIdleFence(): Int {
-        device.device.waitForFences(
-            fences = workingFenceArray,
-            waitAll = false,
-            timeout = -1L
-        )
-        return workingFence.indexOfFirst {
-            device.device.getFenceStatus(it) == VkResult.SUCCESS
-        }
-    }*/
 
-    init {
-        for (i in presentJ.indices) {
-            presentJ[i].complete()
-        }
-    }
-
-    var ii = 0
 
     fun drawImage(): Boolean {
-
-//        val workerIndex = findIdleFence()
-//        device.device.resetFences(workingFence[workerIndex])
-
 
         var success = true
         val imageIndex = device.device.acquireNextImageKHR(
@@ -149,10 +119,6 @@ class OzQueue(val ozVulkan: OzVulkan, val device: OzDevice, val queueFamilyIndex
             }
         )
 
-//        logger.info {
-//            "acquire $success"
-//        }
-
 
         if(!success) return false
 
@@ -160,41 +126,13 @@ class OzQueue(val ozVulkan: OzVulkan, val device: OzDevice, val queueFamilyIndex
         val cmd_defer = runBlocking { ozVulkan.framebuffer.fbs[imageIndex].getCmds() }
 
 
-
-
-//        if (imageStatusFence[imageIndex] != VkFence.NULL) {
-//            logger.info {
-//                "waiting"
-//            }
-
-//            device.device.waitForFences(imageF[imageIndex], true, -1L)
-
-        runBlocking {
-            presentJ[imageIndex].join()
-            presentJ[imageIndex] = Job()
-        }
-//        }
-//        imageStatusFence[imageIndex] = workingFence[workerIndex]
-
+        device.device.waitForFences(submitF[imageIndex], true, -1L)
         device.device.resetFences(submitF[imageIndex])
-
-//        logger.info {
-//            "previous fence finish"
-//        }
 
 
         val cmds = runBlocking {
             cmd_defer.await()
         }
-
-        ii++
-        if (ii % 10000 == 0) {
-            logger.info {
-                "cmds size: ${cmds.size}"
-            }
-        }
-
-
 
         val submitInfo = SubmitInfo(
             waitSemaphoreCount = 1,
@@ -207,11 +145,6 @@ class OzQueue(val ozVulkan: OzVulkan, val device: OzDevice, val queueFamilyIndex
             submit = submitInfo,    //current vkk api doesn't support multiple submitInfo, so flatten cmds in one array
             fence = submitF[imageIndex]
         )
-
-//        logger.info {
-//            "after submit"
-//        }
-
 
         val presentInfo = PresentInfoKHR(
             waitSemaphores = VkSemaphore_Array(arrayListOf(submitS[imageIndex])),
@@ -226,11 +159,6 @@ class OzQueue(val ozVulkan: OzVulkan, val device: OzDevice, val queueFamilyIndex
             job.await()
         }
 
-//        logger.info {
-//            "await present"
-//        }
-
-
         if (result == VkResult.ERROR_OUT_OF_DATE_KHR || result == VkResult.SUBOPTIMAL_KHR) {
             logger.info("recreate swapchain/renderpass after present")
             return false
@@ -238,8 +166,6 @@ class OzQueue(val ozVulkan: OzVulkan, val device: OzDevice, val queueFamilyIndex
             logger.error("present swapchain fail")
             return false
         }
-
-        presentJ[imageIndex].complete()
 
         return true
     }

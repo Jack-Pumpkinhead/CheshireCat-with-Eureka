@@ -8,7 +8,6 @@ import game.window.OzWindow
 import kotlinx.coroutines.*
 import mu.KotlinLogging
 import uno.glfw.glfw
-import vulkan.drawing.DrawFrame
 import vulkan.drawing.Drawing
 
 class FrameLoop(val univ: Univ, val window: OzWindow) {
@@ -66,27 +65,25 @@ class FrameLoop(val univ: Univ, val window: OzWindow) {
         }
     }
 
-    val drawframe = DrawFrame(univ.vulkan, univ.vulkan.device, this)
-
     val drawing = Drawing(univ.vulkan, univ.vulkan.device, this)
 
+    //use while(window.isActive) would throw exception at close
     suspend fun printFPS() {
-        //use while(window.isActive) would throw exception at close
-            tick.receive()
+        tick.receive()
 
-            val fps = fps.getTPS()
-            logger.info {
-                "fps: $fps"
-            }
-            /*logger.info {
-                "window framebuffer size: ${univ.window.framebufferSize}"
-            }
-            logger.info {
-                "surface size: ${univ.vulkan.physicalDevice.pd.getSurfaceCapabilitiesKHR(univ.vulkan.surface.surface).currentExtent.size}"
-            }*/
-            logger.info {
-                "cmds: ${univ.vulkan.framebuffer.fbs[0].drawCmds.size}"
-            }
+        val fps = fps.getTPS()
+        logger.info {
+            "fps: $fps"
+        }
+        /*logger.info {
+            "window framebuffer size: ${univ.window.framebufferSize}"
+        }
+        logger.info {
+            "surface size: ${univ.vulkan.physicalDevice.pd.getSurfaceCapabilitiesKHR(univ.vulkan.surface.surface).currentExtent.size}"
+        }*/
+        logger.info {
+            "cmds: ${univ.vulkan.framebuffer.fbs[0].drawCmds.size}"
+        }
     }
 
 }

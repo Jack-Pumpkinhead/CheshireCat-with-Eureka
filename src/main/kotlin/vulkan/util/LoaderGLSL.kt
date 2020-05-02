@@ -7,7 +7,7 @@ import kool.ByteBuffer
 import mu.KotlinLogging
 import java.nio.ByteBuffer
 
-class LoaderGLSL private constructor(val name: String, val stage: Int) {
+class LoaderGLSL private constructor(val text: String, val stage: Int) {
 
     val logger = KotlinLogging.logger { }
 
@@ -16,12 +16,21 @@ class LoaderGLSL private constructor(val name: String, val stage: Int) {
             Loader.loadNatives()
             assert(libspirvcrossj.initializeProcess())
         }
-        val resources = libspirvcrossj.getDefaultTBuiltInResource()
+        val resources: SWIGTYPE_p_TBuiltInResource = libspirvcrossj.getDefaultTBuiltInResource()
 
         fun ofVert(name: String) = LoaderGLSL(name, EShLanguage.EShLangVertex)
         fun ofFrag(name: String) = LoaderGLSL(name, EShLanguage.EShLangFragment)
 
+        fun ofGLSL(path: String) = LoaderGLSL(LoaderFile.ofString("shaders\\glsl\\$path"),stageOf(path))
 
+        /**
+         * @param stage fill in manually if don't follow default file naming convention
+         * */
+        fun stageOf(path: String, stage: Int = -1) = when (path.substringAfterLast('.', "glsl")) {
+            "vert" -> EShLanguage.EShLangVertex
+            "frag" -> EShLanguage.EShLangFragment
+            else -> stage
+        }
 
         fun destroy() {
             libspirvcrossj.finalizeProcess()
@@ -29,7 +38,7 @@ class LoaderGLSL private constructor(val name: String, val stage: Int) {
     }
 
 
-    val text = LoaderFile.ofString("shaders\\glsl\\$name.${sufix(stage)}")
+    //    val text = LoaderFile.ofString("shaders\\glsl\\$name.${sufix(stage)}")
 
     val buffer: ByteBuffer
 

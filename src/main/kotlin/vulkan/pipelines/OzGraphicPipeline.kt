@@ -10,13 +10,14 @@ import vkk.vk10.createShaderModule
 import vkk.vk10.structs.*
 import vulkan.OzDevice
 import vulkan.OzRenderPass
-import vulkan.OzVertexInput
 import vulkan.OzVulkan
+import vulkan.pipelines.vertexInput.OzVertexInput33
 import vulkan.util.LoaderGLSL
 
 class OzGraphicPipeline(
     val ozVulkan: OzVulkan,
     val device: OzDevice,
+    val shadermodule: OzShaderModule,
     val renderPass: OzRenderPass,
     extent2D: Extent2D
 ) {
@@ -26,28 +27,12 @@ class OzGraphicPipeline(
     val pipelineLayout: VkPipelineLayout
     val graphicsPipelines: VkPipeline_Array
     init {
-        val vertCI = ShaderModuleCreateInfo(code = LoaderGLSL.ofVert("hellobuffer").buffer)
-        val vert = device.device.createShaderModule(vertCI)
-        val fragCI = ShaderModuleCreateInfo(code = LoaderGLSL.ofFrag("hellobuffer").buffer)
-        val frag: VkShaderModule = device.device.createShaderModule(fragCI)
 
-        assert(vert.isValid)
-        assert(frag.isValid)
-
-        val shaderstageCI_vert = PipelineShaderStageCreateInfo(
-            stage = VkShaderStage.VERTEX_BIT,
-            module = vert,
-            name = "main"   //standard entry point
-        )
-
-        val shaderstageCI_frag = PipelineShaderStageCreateInfo(
-            stage = VkShaderStage.FRAGMENT_BIT,
-            module = frag,
-            name = "main"
-        )
+        val shaderstageCI_vert = shadermodule.getPipelineShaderStageCI("hellobuffer.vert")
+        val shaderstageCI_frag = shadermodule.getPipelineShaderStageCI("hellobuffer.frag")
 
 
-        val temp = OzVertexInput()
+        val temp = OzVertexInput33()
 
         val vertexInputStateCI = PipelineVertexInputStateCreateInfo(
             vertexBindingDescriptions = arrayOf(temp.bindingDescription),
@@ -152,8 +137,6 @@ class OzGraphicPipeline(
             assert(graphicsPipelines[it].isValid) { "graphic pipeline $it is invalid!"}
         }
 
-        device.device.destroy(vert)
-        device.device.destroy(frag)
     }
 
 

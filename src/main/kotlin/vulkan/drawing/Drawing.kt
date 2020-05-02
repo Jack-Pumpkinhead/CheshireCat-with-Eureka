@@ -1,13 +1,11 @@
 package vulkan.drawing
 
 import game.loop.FrameLoop
-import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import vulkan.OzDevice
-import vulkan.concurrent.OzFramebuffer
 import vulkan.OzVulkan
 
-class Drawing(val vulkan: OzVulkan, val device: OzDevice, val frameLoop: FrameLoop) {
+class Drawing(val ozVulkan: OzVulkan, val device: OzDevice, val frameLoop: FrameLoop) {
 
     companion object {
 
@@ -16,15 +14,12 @@ class Drawing(val vulkan: OzVulkan, val device: OzDevice, val frameLoop: FrameLo
     }
 
 
-    val simpleObject = SimpleObject(vulkan)
+    val simpleObject = SimpleObject(ozVulkan)
 
     val rectangle: OzVertexDataImmutable = simpleObject.getRectangle()
 //    val triangle: OzVertexDataImmutable = simpleObject.getTriangle()
 
-    init {
-        vulkan.after.add(rectangle::afterSwapchainRecreated)
-//        vulkan.after.add(triangle::afterSwapchainRecreated)
-    }
+
 
     var ii = 0
 
@@ -42,8 +37,18 @@ class Drawing(val vulkan: OzVulkan, val device: OzDevice, val frameLoop: FrameLo
 //            }
 //        }
         if (!drawSuccess) {
-            vulkan.shouldRecreate = true
+            ozVulkan.shouldRecreate = true
         }
+    }
+
+
+    init {
+        ozVulkan.cleanups.addNode(this::destroy)
+        ozVulkan.cleanups.putEdge(device::destroy, this::destroy)
+    }
+
+    fun destroy() {
+        rectangle.destroy()
     }
 
 

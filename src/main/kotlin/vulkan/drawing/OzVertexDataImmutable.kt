@@ -112,9 +112,14 @@ class OzVertexDataImmutable(
         }
     }
 
+    init {
+        ozcb.ozVulkan.after.add(this::afterSwapchainRecreated)
+    }
 
 
     fun destroy() {
+        ozcb.ozVulkan.after.remove(this::afterSwapchainRecreated)
+
         runBlocking {
             unregister()
         }

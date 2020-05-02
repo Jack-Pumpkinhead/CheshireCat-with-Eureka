@@ -1,4 +1,4 @@
-package vulkan
+package vulkan.pipelines.vertexInput
 
 import kool.BYTES
 import mu.KotlinLogging
@@ -7,11 +7,13 @@ import vkk.VkVertexInputRate
 import vkk.vk10.structs.VertexInputAttributeDescription
 import vkk.vk10.structs.VertexInputBindingDescription
 
-class OzVertexInput {
+class OzVertexInput33 {
 
     companion object {
 
         val logger = KotlinLogging.logger { }
+
+        fun bytes(vertexCount: Int) = (3 + 3) * Float.BYTES * vertexCount
 
     }
 

@@ -17,24 +17,10 @@ class OzFramebuffers(
     val imageViews: OzImageViews,
     extent2D: Extent2D
 ) {
-
-    val logger = KotlinLogging.logger { }
-
-    val framebuffers: List<VkFramebuffer>
-
-    init {
-        framebuffers = imageViews.imageViews.map {
-            val framebufferCI = FramebufferCreateInfo(
-                renderPass = renderPass.renderpass,
-                attachments = VkImageView_Array(listOf(it)),
-                width = extent2D.width,
-                height = extent2D.height,
-                layers = 1  //Image layer, not debug layer
-            )
-            device.device.createFramebuffer(framebufferCI)
-        }
-
+    companion object {
+        val logger = KotlinLogging.logger { }
     }
+
 
     val fbs = imageViews.imageViews.map {
         OzFramebuffer(ozVulkan, device, renderPass, it, extent2D)
@@ -42,20 +28,13 @@ class OzFramebuffers(
 
     suspend fun onRecreateRenderpass(job: CompletableJob): List<Job> {
         return fbs.map {
-            it.wait_clear(job)
+            it.wait_clear(job)  //如果重建OzFramebuffers就不需要clear
         }
     }
 
 
 
 
-    init {
-        ozVulkan.cleanups.addNode(this::destroy)
-        ozVulkan.cleanups.putEdge(device::destroy, this::destroy)
-    }
 
-    fun destroy() {
-        framebuffers.indices.forEach { device.device.destroy(framebuffers[it]) }
-    }
 
 }

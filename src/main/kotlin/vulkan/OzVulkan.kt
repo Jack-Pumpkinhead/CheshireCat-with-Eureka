@@ -1,6 +1,7 @@
 package vulkan
 
 import com.google.common.graph.GraphBuilder
+import com.google.common.graph.MutableGraph
 import com.google.common.graph.Traverser
 import game.main.AfterSwapchainRecreated
 import game.main.CleanUpMethod
@@ -19,6 +20,7 @@ import vkk.vk10.structs.Extent2D
 import vulkan.command.OzCB
 import vulkan.drawing.OzVMA
 import vulkan.pipelines.OzGraphicPipeline
+import vulkan.pipelines.OzShaderModule
 import vulkan.util.LoaderGLSL
 import vulkan.util.SurfaceSwapchainSupport
 
@@ -27,7 +29,7 @@ import vulkan.util.SurfaceSwapchainSupport
  */
 class OzVulkan(val univ: Univ, val window: OzWindow) {
     val logger = KotlinLogging.logger {  }
-    val cleanups = GraphBuilder.directed().allowsSelfLoops(false).build<CleanUpMethod>()
+    val cleanups: MutableGraph<CleanUpMethod> = GraphBuilder.directed().allowsSelfLoops(false).build<CleanUpMethod>()
     val instance = OzInstance(this)
     val surface = OzSurface(this, instance, window)
     var physicalDevice = OzPhysicalDevice(this, instance, instance.physicalDevices[0])
@@ -50,12 +52,17 @@ class OzVulkan(val univ: Univ, val window: OzWindow) {
 
     val device = OzDevice(this, physicalDevice, surfaceSupport)
 
-    var commandPool = OzCommandPools(this, device, surfaceSupport)
+    val commandPool = OzCommandPools(this, device, surfaceSupport)
 
     val cb = OzCB(this, commandPool, device)
 
+    val shadermodule = OzShaderModule(this, device)
+
+
 
     val vma = OzVMA(this, physicalDevice, device)
+
+
 
     var swapchain = OzSwapchain(this, surfaceSupport, device, window.framebufferSize)
 
@@ -63,67 +70,12 @@ class OzVulkan(val univ: Univ, val window: OzWindow) {
 
     var renderpass = OzRenderPass(this, device, surfaceSupport.surfaceFormat.format)
 
-    var pipeline = OzGraphicPipeline(this, device, renderpass, Extent2D(window.framebufferSize))
+    var pipeline = OzGraphicPipeline(this, device, shadermodule, renderpass, Extent2D(window.framebufferSize))
 
     var framebuffer = OzFramebuffers(this, device, renderpass, imageViews, Extent2D(window.framebufferSize))
 
-//    var vertexBuffer = OzVertexBuffer.of(device, (3 + 3) * Float.BYTES * 3)
 
-//    var vertexBuffer = OzVertexBuffer(this, device, physicalDevice, (3 + 3) * Float.BYTES * 3)
-
-    var vb_s = vma.of_staging((3 + 3) * Float.BYTES * 3)
-    var vb_d = vma.of_VertexBuffer_device_local((3 + 3) * Float.BYTES * 3)
-
-    init {
-        fillBuffer()
-    }
-
-    fun fillBuffer() {
-        /*Stack{
-            val arr = it.floats(
-                // position    color
-                +0.0f, -0.5f, +0f, 1f, 0f, 0f,
-                +0.5f, +0.5f, +0f, 0f, 1f, 0f,
-                -0.5f, 0.5f, +0f, 0f, 0f, 1f)
-
-            logger.info {
-                "arr.remSize: ${arr.remSize}"
-            }
-            device.device.mappedMemory(
-                memory = vertexBuffer_staging.memory,
-                offset = VkDeviceSize(0),
-                size = VkDeviceSize(vertexBuffer_staging.bytes),
-                flags = 0
-            ) {
-                memCopy(MemoryUtil.memAddress(arr), it, VkDeviceSize(arr.remSize.L))
-            }
-        }*/
-//        commandPool.copyBuffer(vertexBuffer_staging, vertexBuffer_device_local, vertexBuffer_staging.bytes)
-//        cleanup(vertexBuffer_staging::destroy)
-//        vertexBuffer_staging.destroy()
-        Stack{
-            val arr = it.floats(
-                // position    color
-                +0.0f, -0.5f, +0f, 1f, 1f, 1f,
-                +0.5f, +0.5f, +0f, 0f, 1f, 0f,
-                -0.5f, 0.5f, +0f, 0f, 0f, 1f)
-
-            logger.info {
-                "arr.remSize: ${arr.remSize}"
-            }
-            vb_s.withMap {
-                memCopy(arr.adr, it, VkDeviceSize(arr.remSize))
-            }
-            commandPool.copyBuffer(VkBuffer(vb_s.pBuffer), VkBuffer(vb_d.pBuffer), arr.remSize)
-
-        }
-
-    }
-
-
-    var commandBuffers = OzCommandBuffers(this, device, commandPool, framebuffer, swapchain, pipeline, renderpass)
-
-    var sync = OzSyncObject(this, device, swapchain)
+//    var commandBuffers = OzCommandBuffers(this, device, commandPool, framebuffer, swapchain, pipeline, renderpass)
 
 
     var shouldRecreate = false
@@ -148,8 +100,9 @@ class OzVulkan(val univ: Univ, val window: OzWindow) {
         val newSwapchain = OzSwapchain(this, surfaceSupport, device, windowSize, swapchain.swapchain)
 
         device.device.waitIdle()
-        cleanup(framebuffer::destroy)
-        commandBuffers.destroy()
+        framebuffer.fbs.forEach {
+            cleanup(it::destroy)
+        }
         cleanup(pipeline::destroy)
 //        cleanup(renderpass::destroy)
         cleanup(imageViews::destroy)
@@ -161,11 +114,9 @@ class OzVulkan(val univ: Univ, val window: OzWindow) {
 
 //        renderpass = OzRenderPass(this, device, swapchain)
 
-        pipeline = OzGraphicPipeline(this, device, renderpass, Extent2D(windowSize))
+        pipeline = OzGraphicPipeline(this, device, shadermodule, renderpass, Extent2D(windowSize))
 
         framebuffer = OzFramebuffers(this, device, renderpass, imageViews, Extent2D(windowSize))//
-
-        commandBuffers = OzCommandBuffers(this, device, commandPool, framebuffer, swapchain, pipeline, renderpass)
 
         job.complete()  //trigger waiting coroutine
 

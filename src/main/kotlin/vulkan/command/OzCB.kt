@@ -40,9 +40,8 @@ class OzCB(val ozVulkan: OzVulkan, val commandPools: OzCommandPools, val device:
             cb.end()
             return cb
         }
-        var ii = 1
 
-        fun recordDraw(
+        fun recordDrawIndexed(
             cb: CommandBuffer,
             renderPass: VkRenderPass,
             framebuffer: VkFramebuffer,
@@ -59,7 +58,6 @@ class OzCB(val ozVulkan: OzVulkan, val commandPools: OzCommandPools, val device:
                     inheritanceInfo = null
                 )
             )
-//            ii++
             cb.beginRenderPass(
                 renderPassBegin = RenderPassBeginInfo(
                     renderPass = renderPass,
@@ -97,15 +95,6 @@ class OzCB(val ozVulkan: OzVulkan, val commandPools: OzCommandPools, val device:
                 vertexOffset = 0,
                 firstInstance = 0
             )
-            /*logger.info {
-                "draw count: $count"
-            }*/
-            /*cb.draw(
-                vertexCount = count,
-                instanceCount = 1,
-                firstVertex = 0,
-                firstInstance = 0
-            )*/
 
             cb.endRenderPass()
             cb.end()

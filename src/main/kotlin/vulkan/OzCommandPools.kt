@@ -1,18 +1,20 @@
 package vulkan
 
+import kotlinx.coroutines.CompletableJob
+import kotlinx.coroutines.Job
 import mu.KotlinLogging
 import vkk.VkCommandBufferLevel
 import vkk.VkCommandBufferUsage
 import vkk.VkCommandPoolCreate
-import vkk.VkCommandPoolCreateFlags
 import vkk.entities.VkBuffer
 import vkk.entities.VkCommandPool
 import vkk.entities.VkDeviceSize
 import vkk.vk10.*
 import vkk.vk10.structs.*
+import vulkan.concurrent.OzCommandPool
 import vulkan.util.SurfaceSwapchainSupport
 
-class OzCommandPool(val ozVulkan: OzVulkan, val device: OzDevice, val surfaceSupport: SurfaceSwapchainSupport) {
+class OzCommandPools(val ozVulkan: OzVulkan, val device: OzDevice, val surfaceSupport: SurfaceSwapchainSupport) {
 
     val logger = KotlinLogging.logger { }
 
@@ -29,6 +31,16 @@ class OzCommandPool(val ozVulkan: OzVulkan, val device: OzDevice, val surfaceSup
         )
     )
 
+
+    val graphicCP = OzCommandPool(ozVulkan, device, surfaceSupport.queuefamily_graphic, 0)
+    val transferCP = OzCommandPool(ozVulkan, device, surfaceSupport.queuefamily_transfer, VkCommandPoolCreate.TRANSIENT_BIT.i)
+
+    suspend fun onRecreateRenderpass(job: CompletableJob): List<Pair<CompletableJob, CompletableJob>> {
+        return listOf(
+            graphicCP.wait_reset(job),
+            transferCP.wait_reset(job)
+        )
+    }
 
     init {
         ozVulkan.cleanups.addNode(this::destroy)

@@ -1,41 +1,52 @@
 package vulkan
 
+import kotlinx.coroutines.CompletableJob
+import kotlinx.coroutines.Job
 import mu.KotlinLogging
 import vkk.entities.VkFramebuffer
-import vkk.entities.VkFramebuffer_Array
-import vkk.entities.VkImageView
 import vkk.entities.VkImageView_Array
 import vkk.vk10.createFramebuffer
-import vkk.vk10.createFramebufferArray
 import vkk.vk10.structs.Extent2D
 import vkk.vk10.structs.FramebufferCreateInfo
+import vulkan.concurrent.OzFramebuffer
 
 class OzFramebuffers(
     val ozVulkan: OzVulkan,
     val device: OzDevice,
     val renderPass: OzRenderPass,
-    val swapchain: OzSwapchain,
-    val imageViews: OzImageViews
+    val imageViews: OzImageViews,
+    extent2D: Extent2D
 ) {
 
     val logger = KotlinLogging.logger { }
 
-    val framebuffers: VkFramebuffer_Array
+    val framebuffers: List<VkFramebuffer>
 
     init {
-
-        val framebufferCI = FramebufferCreateInfo(
-            renderPass = renderPass.renderpass,
-            width = swapchain.extent.width,
-            height = swapchain.extent.height,
-            layers = 1  //Image layer, not debug layer
-        )
-        framebuffers = device.device.createFramebufferArray(
-            createInfo = framebufferCI,
-            imageViews = imageViews.imageViews
-        )
+        framebuffers = imageViews.imageViews.map {
+            val framebufferCI = FramebufferCreateInfo(
+                renderPass = renderPass.renderpass,
+                attachments = VkImageView_Array(listOf(it)),
+                width = extent2D.width,
+                height = extent2D.height,
+                layers = 1  //Image layer, not debug layer
+            )
+            device.device.createFramebuffer(framebufferCI)
+        }
 
     }
+
+    val fbs = imageViews.imageViews.map {
+        OzFramebuffer(ozVulkan, device, renderPass, it, extent2D)
+    }
+
+    suspend fun onRecreateRenderpass(job: CompletableJob): List<Job> {
+        return fbs.map {
+            it.wait_clear(job)
+        }
+    }
+
+
 
 
     init {

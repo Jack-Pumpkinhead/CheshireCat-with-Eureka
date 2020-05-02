@@ -75,6 +75,22 @@ class OzVMA(
         VkMemoryProperty.HOST_COHERENT_BIT.i,
         Vma.VMA_MEMORY_USAGE_CPU_ONLY
     )
+    fun of_staging_vertex(bytes: Int) = create(
+        bytes.L,
+        VkBufferUsage.TRANSFER_SRC_BIT.or(VkBufferUsage.VERTEX_BUFFER_BIT),
+        VkMemoryProperty.HOST_VISIBLE_BIT.i,
+        VkMemoryProperty.HOST_COHERENT_BIT.i,
+        Vma.VMA_MEMORY_USAGE_CPU_ONLY
+    )
+
+    fun of_staging_index(bytes: Int) = create(
+        bytes.L,
+        VkBufferUsage.TRANSFER_SRC_BIT.or(VkBufferUsage.INDEX_BUFFER_BIT),
+        VkMemoryProperty.HOST_VISIBLE_BIT.i,
+        VkMemoryProperty.HOST_COHERENT_BIT.i,
+        Vma.VMA_MEMORY_USAGE_CPU_ONLY
+    )
+
 
     fun of_VertexBuffer_device_local(bytes: Int): VMABuffer = create(
         bytes.L,

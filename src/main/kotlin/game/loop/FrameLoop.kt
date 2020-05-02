@@ -9,6 +9,7 @@ import kotlinx.coroutines.*
 import mu.KotlinLogging
 import uno.glfw.glfw
 import vulkan.drawing.DrawFrame
+import vulkan.drawing.Drawing
 
 class FrameLoop(val univ: Univ, val window: OzWindow) {
 
@@ -26,8 +27,10 @@ class FrameLoop(val univ: Univ, val window: OzWindow) {
 
     fun loop() {
 
-        scope.launch {
-            printFPS()
+        val job = scope.launch {
+            while (isActive) {
+                printFPS()
+            }
         }
 
         while (window.isOpen) {
@@ -37,24 +40,23 @@ class FrameLoop(val univ: Univ, val window: OzWindow) {
 
             //where is getSwapchainStatus?
 //            univ.vulkan.device.device.sw
-            if (window.resized) {
+            if (window.resized || univ.vulkan.shouldRecreate) {
                 univ.vulkan.recreateRenderpass(window.framebufferSize)
             }
 
-            var tick = 0L
-            runBlocking { tick = fps.getTotal()}
+            val tick = runBlocking { fps.getTotal() }
 
 
             listeners.forEach { it.update(tick) }
-            drawframe.draw()
+//            drawframe.draw()
+            drawing.draw()
 
 
             runBlocking { fps.record() }
             window.swapBuffers()
         }
 
-
-
+        job.cancel()
 
     }
 
@@ -66,15 +68,25 @@ class FrameLoop(val univ: Univ, val window: OzWindow) {
 
     val drawframe = DrawFrame(univ.vulkan, univ.vulkan.device, this)
 
+    val drawing = Drawing(univ.vulkan, univ.vulkan.device, this)
+
     suspend fun printFPS() {
-        while (window.isOpen) {
+        //use while(window.isActive) would throw exception at close
             tick.receive()
 
             val fps = fps.getTPS()
             logger.info {
                 "fps: $fps"
             }
-        }
+            /*logger.info {
+                "window framebuffer size: ${univ.window.framebufferSize}"
+            }
+            logger.info {
+                "surface size: ${univ.vulkan.physicalDevice.pd.getSurfaceCapabilitiesKHR(univ.vulkan.surface.surface).currentExtent.size}"
+            }*/
+            logger.info {
+                "cmds: ${univ.vulkan.framebuffer.fbs[0].drawCmds.size}"
+            }
     }
 
 }

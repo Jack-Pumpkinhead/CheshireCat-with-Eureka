@@ -7,7 +7,7 @@ import vkk.entities.VkRenderPass
 import vkk.vk10.createRenderPass
 import vkk.vk10.structs.*
 
-class OzRenderPass(val ozVulkan: OzVulkan, val device: OzDevice, swapchain: OzSwapchain) {
+class OzRenderPass(val ozVulkan: OzVulkan, val device: OzDevice, format: VkFormat) {
 
     val logger = KotlinLogging.logger { }
 
@@ -15,7 +15,7 @@ class OzRenderPass(val ozVulkan: OzVulkan, val device: OzDevice, swapchain: OzSw
 
     init {
         val attachmentDescription = AttachmentDescription(
-            format = swapchain.format.format,
+            format = format,
             samples = VkSampleCount._1_BIT,
             loadOp = VkAttachmentLoadOp.CLEAR,
             storeOp = VkAttachmentStoreOp.STORE,
@@ -24,6 +24,7 @@ class OzRenderPass(val ozVulkan: OzVulkan, val device: OzDevice, swapchain: OzSw
             initialLayout = VkImageLayout.UNDEFINED,
             finalLayout = VkImageLayout.PRESENT_SRC_KHR
         )
+
 
         val attachmentReference = AttachmentReference(
             attachment = 0, //index of attachmentDescription array  //of what?
@@ -37,10 +38,10 @@ class OzRenderPass(val ozVulkan: OzVulkan, val device: OzDevice, swapchain: OzSw
 
         val subpassDependency = SubpassDependency(
             srcSubpass = VK10.VK_SUBPASS_EXTERNAL,
-            dstSubpass = 0,  //index of subpass in device
+            dstSubpass = 0,  //index of subpasses
             srcStageMask = VkPipelineStage.COLOR_ATTACHMENT_OUTPUT_BIT.i,
-            srcAccessMask = VkAccess(0).i,
             dstStageMask = VkPipelineStage.COLOR_ATTACHMENT_OUTPUT_BIT.i,
+            srcAccessMask = VkAccess(0).i,
             dstAccessMask = VkAccess.COLOR_ATTACHMENT_WRITE_BIT.i
         )
 

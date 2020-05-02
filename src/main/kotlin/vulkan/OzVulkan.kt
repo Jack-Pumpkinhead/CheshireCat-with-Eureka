@@ -2,16 +2,23 @@ package vulkan
 
 import com.google.common.graph.GraphBuilder
 import com.google.common.graph.Traverser
+import game.main.AfterSwapchainRecreated
 import game.main.CleanUpMethod
 import game.main.Univ
 import game.window.OzWindow
 import glm_.vec2.Vec2i
 import kool.*
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.joinAll
+import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import vkk.entities.VkBuffer
 import vkk.entities.VkDeviceSize
 import vkk.memCopy
+import vkk.vk10.structs.Extent2D
+import vulkan.command.OzCB
 import vulkan.drawing.OzVMA
+import vulkan.pipelines.OzGraphicPipeline
 import vulkan.util.LoaderGLSL
 import vulkan.util.SurfaceSwapchainSupport
 
@@ -36,24 +43,29 @@ class OzVulkan(val univ: Univ, val window: OzWindow) {
         if (!(physicalDevice.supported() && surfaceSupport.supported())) {
             logger.warn { "No suitable physical device found." }
         }
+        logger.info {
+            "use pd: ${physicalDevice.pd.address()}"
+        }
     }
 
     val device = OzDevice(this, physicalDevice, surfaceSupport)
 
-    val vma = OzVMA(this, physicalDevice, device)
+    var commandPool = OzCommandPools(this, device, surfaceSupport)
 
+    val cb = OzCB(this, commandPool, device)
+
+
+    val vma = OzVMA(this, physicalDevice, device)
 
     var swapchain = OzSwapchain(this, surfaceSupport, device, window.framebufferSize)
 
     var imageViews = OzImageViews(this, device, swapchain)
 
-    var renderpass = OzRenderPass(this, device, swapchain)
+    var renderpass = OzRenderPass(this, device, surfaceSupport.surfaceFormat.format)
 
-    var pipeline = OzGraphicPipeline(this, device, renderpass, swapchain)
+    var pipeline = OzGraphicPipeline(this, device, renderpass, Extent2D(window.framebufferSize))
 
-    var framebuffer = OzFramebuffers(this, device, renderpass, swapchain, imageViews)
-
-    var commandPool = OzCommandPool(this, device, surfaceSupport)
+    var framebuffer = OzFramebuffers(this, device, renderpass, imageViews, Extent2D(window.framebufferSize))
 
 //    var vertexBuffer = OzVertexBuffer.of(device, (3 + 3) * Float.BYTES * 3)
 
@@ -92,7 +104,7 @@ class OzVulkan(val univ: Univ, val window: OzWindow) {
         Stack{
             val arr = it.floats(
                 // position    color
-                +0.0f, -0.5f, +0f, 1f, 0f, 0f,
+                +0.0f, -0.5f, +0f, 1f, 1f, 1f,
                 +0.5f, +0.5f, +0f, 0f, 1f, 0f,
                 -0.5f, 0.5f, +0f, 0f, 0f, 1f)
 
@@ -114,7 +126,24 @@ class OzVulkan(val univ: Univ, val window: OzWindow) {
     var sync = OzSyncObject(this, device, swapchain)
 
 
+    var shouldRecreate = false
+
     fun recreateRenderpass(windowSize: Vec2i) {
+        val job = Job()
+        val cps = runBlocking {
+            commandPool.onRecreateRenderpass(job)
+        }
+        val qs = runBlocking {
+            device.onRecreateRenderpass(job)
+        }
+        val fbs = runBlocking {
+            framebuffer.onRecreateRenderpass(job)
+        }
+        runBlocking {
+            cps.map { it.first }.joinAll()
+        }
+
+
 
         val newSwapchain = OzSwapchain(this, surfaceSupport, device, windowSize, swapchain.swapchain)
 
@@ -122,25 +151,39 @@ class OzVulkan(val univ: Univ, val window: OzWindow) {
         cleanup(framebuffer::destroy)
         commandBuffers.destroy()
         cleanup(pipeline::destroy)
-        cleanup(renderpass::destroy)
+//        cleanup(renderpass::destroy)
         cleanup(imageViews::destroy)
         cleanup(swapchain::destroy)
 
         swapchain = newSwapchain
 
-        imageViews = OzImageViews(this, device, swapchain)
+        imageViews = OzImageViews(this, device, swapchain)//
 
-        renderpass = OzRenderPass(this, device, swapchain)
+//        renderpass = OzRenderPass(this, device, swapchain)
 
-        pipeline = OzGraphicPipeline(this, device, renderpass, swapchain)
+        pipeline = OzGraphicPipeline(this, device, renderpass, Extent2D(windowSize))
 
-        framebuffer = OzFramebuffers(this, device, renderpass, swapchain, imageViews)
+        framebuffer = OzFramebuffers(this, device, renderpass, imageViews, Extent2D(windowSize))//
 
         commandBuffers = OzCommandBuffers(this, device, commandPool, framebuffer, swapchain, pipeline, renderpass)
 
+        job.complete()  //trigger waiting coroutine
+
+        runBlocking {
+            cps.map { it.second }.joinAll()
+            qs.joinAll()
+            fbs.joinAll()
+        }
+
+        //TODO: poll event to drawable things
+
+        after.forEach {
+            it.invoke()
+        }
 
     }
 
+    val after = mutableListOf<AfterSwapchainRecreated>()
 
 
     fun cleanup(c: CleanUpMethod) {

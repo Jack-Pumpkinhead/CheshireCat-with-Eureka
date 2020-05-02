@@ -6,7 +6,6 @@ import vkk.VkFormat
 import vkk.VkVertexInputRate
 import vkk.vk10.structs.VertexInputAttributeDescription
 import vkk.vk10.structs.VertexInputBindingDescription
-import vulkan.OzVertexBuffer
 
 class OzVertexInput33 {
 

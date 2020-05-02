@@ -9,11 +9,12 @@ import vkk.entities.VkDeviceSize
 import vkk.identifiers.CommandBuffer
 import vkk.vk10.*
 import vkk.vk10.structs.*
+import vulkan.pipelines.OzGraphicPipeline
 
 class OzCommandBuffers(
     val ozVulkan: OzVulkan,
     val device: OzDevice,
-    val commandPool: OzCommandPool,
+    val commandPools: OzCommandPools,
     val framebuffers: OzFramebuffers,
     val swapchain: OzSwapchain,
     val pipeline: OzGraphicPipeline,
@@ -28,7 +29,7 @@ class OzCommandBuffers(
 
         commandbuffers = device.device.allocateCommandBuffers(
             allocateInfo = CommandBufferAllocateInfo(
-                commandPool = commandPool.graphic,
+                commandPool = commandPools.graphic,
                 level = VkCommandBufferLevel.PRIMARY,
                 commandBufferCount = framebuffers.framebuffers.size
             )
@@ -77,7 +78,7 @@ class OzCommandBuffers(
     }
 
     fun destroy() {
-        device.device.freeCommandBuffers(commandPool.graphic, commandbuffers)
+        device.device.freeCommandBuffers(commandPools.graphic, commandbuffers)
     }
 
 }

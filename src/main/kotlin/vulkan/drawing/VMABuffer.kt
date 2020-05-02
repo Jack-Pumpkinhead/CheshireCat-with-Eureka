@@ -1,5 +1,6 @@
 package vulkan.drawing
 
+import glm_.L
 import kool.Stack
 import kool.adr
 import kool.remSize
@@ -47,6 +48,7 @@ class VMABuffer(val pAllocator: Long, val pBuffer: Long, val pAllocation: Long) 
         withMap {
             memCopy(buffer.adr, it, VkDeviceSize(buffer.remSize))
         }
+//        flushMapped(0,buffer.remSize.L)
     }
 
     fun flushMapped(offset: Long, size: Long) {

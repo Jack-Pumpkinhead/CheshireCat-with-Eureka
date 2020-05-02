@@ -15,12 +15,12 @@ class OzSurface(val ozVulkan: OzVulkan, val ozInstance: OzInstance, val ozWindow
 
     val surface: VkSurfaceKHR = ozInstance.instance.createSurface(ozWindow)
 
-    fun destroy() {
-        ozInstance.instance.destroy(surface)
-    }
-
     init {
         ozVulkan.cleanups.addNode(this::destroy)
         ozVulkan.cleanups.putEdge(ozInstance::destroy, this::destroy)
+    }
+
+    fun destroy() {
+        ozInstance.instance.destroy(surface)
     }
 }

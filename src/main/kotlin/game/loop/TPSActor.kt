@@ -17,7 +17,8 @@ sealed class TPSActor {
 
         private val logger = KotlinLogging.logger { }
 
-        fun launch(coroutineScope: CoroutineScope) = coroutineScope.actor<TPSActor> {
+        //TODO: integrate into TPSCounterConcurrent
+        fun launch(coroutineScope: CoroutineScope) = coroutineScope.actor<TPSActor>(capacity = 64) {
             val tps = TPSCounter()
             for (msg in channel) {
                 when (msg) {

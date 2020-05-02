@@ -1,4 +1,4 @@
-package vulkan
+package vulkan.pipelines
 
 import glm_.vec4.Vec4
 import mu.KotlinLogging
@@ -8,13 +8,17 @@ import vkk.vk10.createGraphicsPipeline
 import vkk.vk10.createPipelineLayout
 import vkk.vk10.createShaderModule
 import vkk.vk10.structs.*
+import vulkan.OzDevice
+import vulkan.OzRenderPass
+import vulkan.OzVertexInput
+import vulkan.OzVulkan
 import vulkan.util.LoaderGLSL
 
 class OzGraphicPipeline(
     val ozVulkan: OzVulkan,
     val device: OzDevice,
     val renderPass: OzRenderPass,
-    val swapchain: OzSwapchain
+    extent2D: Extent2D
 ) {
 
     val logger = KotlinLogging.logger { }
@@ -58,14 +62,14 @@ class OzGraphicPipeline(
         val viewport = Viewport(
             x = 0.0f,
             y = 0.0f,
-            width = swapchain.extent.width.toFloat(),
-            height = swapchain.extent.height.toFloat(),
+            width = extent2D.width.toFloat(),
+            height = extent2D.height.toFloat(),
             minDepth = 0.0f,
             maxDepth = 1.0f
         )
         val scissor = Rect2D(
             offset = Offset2D(0, 0),
-            extent = swapchain.extent
+            extent = extent2D
         )
 
         val viewportSCI = PipelineViewportStateCreateInfo(
@@ -163,5 +167,8 @@ class OzGraphicPipeline(
             device.device.destroy(graphicsPipelines[it])
         }
         device.device.destroy(pipelineLayout)
+        logger.debug {
+            "pipeline 'hellobuffer' destroyed"
+        }
     }
 }

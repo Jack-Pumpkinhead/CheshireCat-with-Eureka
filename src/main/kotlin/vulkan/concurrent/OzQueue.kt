@@ -14,6 +14,7 @@ import vkk.extensions.presentKHR
 import vkk.identifiers.Queue
 import vkk.vk10.getQueue
 import vkk.vk10.resetFences
+import vkk.vk10.structs.Extent2D
 import vkk.vk10.structs.SubmitInfo
 import vkk.vk10.submit
 import vkk.vk10.waitForFences
@@ -121,6 +122,9 @@ class OzQueue(val ozVulkan: OzVulkan, val device: OzDevice, val queueFamilyIndex
 
 
         if(!success) return false
+
+        ozVulkan.uniformBuffer.update(imageIndex, Extent2D(ozVulkan.window.framebufferSize))
+//        ozVulkan.descriptorSets.update()
 
 
         val cmd_defer = runBlocking { ozVulkan.framebuffer.fbs[imageIndex].getCmds() }

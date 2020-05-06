@@ -6,23 +6,31 @@ import game.loop.TPSActor.Companion.record
 import game.main.Univ
 import game.window.OzWindow
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.BroadcastChannel
+import kotlinx.coroutines.channels.Channel
 import mu.KotlinLogging
 import uno.glfw.glfw
+import vkk.VkResult
+import vkk.entities.VkFence
+import vkk.extensions.acquireNextImageKHR
+import vkk.vk
+import vulkan.concurrent.OzQueue
 import vulkan.drawing.Drawing
 
 class FrameLoop(val univ: Univ, val window: OzWindow) {
 
     val logger = KotlinLogging.logger { }
 
-    val listeners = mutableListOf<Tickable>()
-
-//    val tick = TPSCounter()
-
     val scope = CoroutineScope(Dispatchers.Default)
 
     val fps = TPSActor.launch(scope)
 
     val tick = univ.ticker.subscribe()
+
+
+//    class Preparation(val univ: Univ, val image: Int)
+//    val prepareChannel = BroadcastChannel<Preparation>()
+// use actor + action collection
 
     fun loop() {
 
@@ -32,13 +40,15 @@ class FrameLoop(val univ: Univ, val window: OzWindow) {
             }
         }
 
+
         while (window.isOpen) {
             glfw.pollEvents()
 
             pauseForSize()
 
-            //where is getSwapchainStatus?
-//            univ.vulkan.device.device.sw
+
+
+
             if (window.resized || univ.vulkan.shouldRecreate) {
                 univ.vulkan.recreateRenderpass(window.framebufferSize)
             }
@@ -46,8 +56,9 @@ class FrameLoop(val univ: Univ, val window: OzWindow) {
             val tick = runBlocking { fps.getTotal() }
 
 
-            listeners.forEach { it.update(tick) }
+//            listeners.forEach { it.update(tick) }
 //            drawframe.draw()
+
             drawing.draw()
 
 

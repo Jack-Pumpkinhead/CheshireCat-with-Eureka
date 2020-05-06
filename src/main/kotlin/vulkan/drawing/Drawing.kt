@@ -16,8 +16,8 @@ class Drawing(val ozVulkan: OzVulkan, val device: OzDevice, val frameLoop: Frame
 
     val simpleObject = SimpleObject(ozVulkan)
 
-    val rectangle: OzVertexDataImmutable = simpleObject.getRectangle()
 //    val triangle: OzVertexDataImmutable = simpleObject.getTriangle()
+    val rectangle: OzVertexDataImmutable = simpleObject.getRectangle()
 
 
 
@@ -44,10 +44,11 @@ class Drawing(val ozVulkan: OzVulkan, val device: OzDevice, val frameLoop: Frame
 
     init {
         ozVulkan.cleanups.addNode(this::destroy)
-        ozVulkan.cleanups.putEdge(device::destroy, this::destroy)
+        ozVulkan.cleanups.putEdge(ozVulkan.vma::destroy, this::destroy)
     }
 
     fun destroy() {
+//        triangle.destroy()
         rectangle.destroy()
     }
 

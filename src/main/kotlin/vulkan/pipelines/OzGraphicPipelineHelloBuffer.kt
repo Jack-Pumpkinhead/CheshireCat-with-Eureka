@@ -14,7 +14,7 @@ import vulkan.OzVulkan
 import vulkan.pipelines.vertexInput.OzVertexInput33
 import vulkan.util.LoaderGLSL
 
-class OzGraphicPipeline(
+class OzGraphicPipelineHelloBuffer(
     val ozVulkan: OzVulkan,
     val device: OzDevice,
     val shadermodule: OzShaderModule,
@@ -25,11 +25,11 @@ class OzGraphicPipeline(
     val logger = KotlinLogging.logger { }
 
     val pipelineLayout: VkPipelineLayout
-    val graphicsPipelines: VkPipeline_Array
+    val graphicsPipeline: VkPipeline
     init {
 
         val shaderstageCI_vert = shadermodule.getPipelineShaderStageCI("hellobuffer.vert")
-        val shaderstageCI_frag = shadermodule.getPipelineShaderStageCI("hellobuffer.frag")
+        val shaderstageCI_frag = shadermodule.getPipelineShaderStageCI("basic.frag")
 
 
         val temp = OzVertexInput33()
@@ -128,14 +128,10 @@ class OzGraphicPipeline(
             basePipelineIndex = -1
         )
 
-        graphicsPipelines = device.device.createGraphicsPipeline(
+        graphicsPipeline = device.device.createGraphicsPipeline(
             pipelineCache = VkPipelineCache.NULL,
-            createInfos = arrayOf(graphicsPipelineCI)
+            createInfo = graphicsPipelineCI
         )
-
-        graphicsPipelines.indices.forEach {
-            assert(graphicsPipelines[it].isValid) { "graphic pipeline $it is invalid!"}
-        }
 
     }
 
@@ -146,9 +142,7 @@ class OzGraphicPipeline(
     }
 
     fun destroy() {
-        graphicsPipelines.indices.forEach {
-            device.device.destroy(graphicsPipelines[it])
-        }
+        device.device.destroy(graphicsPipeline)
         device.device.destroy(pipelineLayout)
         logger.debug {
             "pipeline 'hellobuffer' destroyed"

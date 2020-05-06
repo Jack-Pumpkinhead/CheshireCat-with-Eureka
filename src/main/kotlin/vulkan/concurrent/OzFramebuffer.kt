@@ -98,6 +98,7 @@ class OzFramebuffer(
 
     fun recordDraw(
         cb: CommandBuffer,
+        pipeline: VkPipeline,
         buffers: VkBuffer_Array,
         offsets: VkDeviceSize_Array = VkDeviceSize_Array(buffers.size) { VkDeviceSize(0) },
         indexBuffer: VkBuffer,
@@ -107,12 +108,13 @@ class OzFramebuffer(
         renderpass.renderpass,
         framebuffer,
         Extent2D(ozVulkan.window.framebufferSize),
-        ozVulkan.pipeline.graphicsPipelines[0],
+        pipeline,
         buffers,
         offsets,
         indexBuffer,
         count
     )
+
 
 
 

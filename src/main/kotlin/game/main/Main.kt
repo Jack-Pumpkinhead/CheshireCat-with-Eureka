@@ -66,8 +66,8 @@ class Univ(){
     }
 
     fun destroy() {
-        vulkan.destroy()
         window.destroy()
+        vulkan.destroy()
         glfw.terminate()
     }
 }

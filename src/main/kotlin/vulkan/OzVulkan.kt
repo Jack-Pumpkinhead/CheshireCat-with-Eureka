@@ -8,19 +8,16 @@ import game.main.CleanUpMethod
 import game.main.Univ
 import game.window.OzWindow
 import glm_.vec2.Vec2i
-import kool.*
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import vkk.entities.VkBuffer
-import vkk.entities.VkDeviceSize
-import vkk.memCopy
 import vkk.vk10.structs.Extent2D
 import vulkan.command.OzCB
+import vulkan.drawing.OzUniformBuffer
 import vulkan.drawing.OzVMA
-import vulkan.pipelines.OzGraphicPipeline
-import vulkan.pipelines.OzShaderModule
+import vulkan.pipelines.*
 import vulkan.util.LoaderGLSL
 import vulkan.util.SurfaceSwapchainSupport
 
@@ -58,6 +55,10 @@ class OzVulkan(val univ: Univ, val window: OzWindow) {
 
     val shadermodule = OzShaderModule(this, device)
 
+    val descriptorPool = OzDescriptorPool(this, device, 3)
+
+
+
 
 
     val vma = OzVMA(this, physicalDevice, device)
@@ -70,12 +71,27 @@ class OzVulkan(val univ: Univ, val window: OzWindow) {
 
     var renderpass = OzRenderPass(this, device, surfaceSupport.surfaceFormat.format)
 
-    var pipeline = OzGraphicPipeline(this, device, shadermodule, renderpass, Extent2D(window.framebufferSize))
+    val graphicPipelines = OzGraphicPipelines(this, device, shadermodule, renderpass, Extent2D(window.framebufferSize))
 
     var framebuffer = OzFramebuffers(this, device, renderpass, imageViews, Extent2D(window.framebufferSize))
 
 
 //    var commandBuffers = OzCommandBuffers(this, device, commandPool, framebuffer, swapchain, pipeline, renderpass)
+
+    val uniformBuffer = OzUniformBuffer(this, device, vma, 3)
+
+    val descriptorSets = OzDescriptorSets(
+        this,
+        device,
+        descriptorPool,
+        graphicPipelines.hellomvp,
+        3,
+        uniformBuffer.buffers.map { VkBuffer(it.pBuffer) },
+        4 * 4 * 3 * Long.SIZE_BYTES
+    )
+
+
+
 
 
     var shouldRecreate = false
@@ -100,10 +116,12 @@ class OzVulkan(val univ: Univ, val window: OzWindow) {
         val newSwapchain = OzSwapchain(this, surfaceSupport, device, windowSize, swapchain.swapchain)
 
         device.device.waitIdle()
+
+        graphicPipelines.recreate(Extent2D(windowSize))
+
         framebuffer.fbs.forEach {
             cleanup(it::destroy)
         }
-        cleanup(pipeline::destroy)
 //        cleanup(renderpass::destroy)
         cleanup(imageViews::destroy)
         cleanup(swapchain::destroy)
@@ -113,8 +131,6 @@ class OzVulkan(val univ: Univ, val window: OzWindow) {
         imageViews = OzImageViews(this, device, swapchain)//
 
 //        renderpass = OzRenderPass(this, device, swapchain)
-
-        pipeline = OzGraphicPipeline(this, device, shadermodule, renderpass, Extent2D(windowSize))
 
         framebuffer = OzFramebuffers(this, device, renderpass, imageViews, Extent2D(windowSize))//
 

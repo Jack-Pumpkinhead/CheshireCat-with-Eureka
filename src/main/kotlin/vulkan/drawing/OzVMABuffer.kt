@@ -2,12 +2,9 @@ package vulkan.drawing
 
 import kool.Stack
 import mu.KotlinLogging
-import org.lwjgl.demo.vulkan.NvRayTracingExample
 import org.lwjgl.system.MemoryUtil.NULL
 import org.lwjgl.util.vma.Vma
 import vulkan.OzVulkan
-import kotlin.contracts.InvocationKind
-import kotlin.contracts.contract
 
 class OzVMABuffer(ozVulkan: OzVulkan, val vma: OzVMA, val pBuffer: Long, val pAllocation: Long) {
 

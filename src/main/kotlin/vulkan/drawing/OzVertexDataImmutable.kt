@@ -3,11 +3,14 @@ package vulkan.drawing
 import kool.*
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
+import org.lwjgl.system.MemoryStack
+import org.lwjgl.system.MemoryUtil
 import vkk.VkPipelineBindPoint
 import vkk.VkSubpassContents
 import vkk.entities.VkBuffer
 import vkk.entities.VkBuffer_Array
 import vkk.entities.VkDeviceSize
+import vkk.entities.VkDeviceSize_Array
 import vkk.identifiers.CommandBuffer
 import vkk.memCopy
 import vkk.vk10.begin
@@ -18,6 +21,7 @@ import vulkan.command.OzCB
 import vulkan.concurrent.OzFramebuffer
 import java.nio.FloatBuffer
 import java.nio.IntBuffer
+import java.nio.MappedByteBuffer
 
 class OzVertexDataImmutable(
     vma: OzVMA,
@@ -84,11 +88,19 @@ class OzVertexDataImmutable(
         return ozcb.ozVulkan.framebuffer.fbs.map {
             val cb = ozcb.commandPools.graphicCP.allocate().await()
 
-            it.recordDraw(
+            /*it.recordDraw(
                 cb,
+                ozcb.ozVulkan.graphicPipelines.hellobuffer.graphicsPipeline,
                 buffers = VkBuffer_Array(1) { VkBuffer(vertexBuffer_device_local.pBuffer) },
                 indexBuffer = VkBuffer(indexBuffer_device_local.pBuffer),
                 count = indices.size
+            )*/
+            ozcb.recordDrawUniform(
+                cb = cb,
+                framebuffer = it.framebuffer,
+                buffer_array = VkBuffer_Array(1) { VkBuffer(vertexBuffer_device_local.pBuffer) },
+                indexBuffer =VkBuffer(indexBuffer_device_local.pBuffer),
+                count = indices.size,offset_array = VkDeviceSize_Array(longArrayOf(0))
             )
         }
     }

@@ -1,38 +1,38 @@
 package vulkan
 
-import kotlinx.coroutines.CompletableJob
-import kotlinx.coroutines.Job
-import mu.KotlinLogging
-import vkk.entities.VkFramebuffer
 import vkk.entities.VkImageView_Array
-import vkk.vk10.createFramebuffer
 import vkk.vk10.structs.Extent2D
 import vkk.vk10.structs.FramebufferCreateInfo
-import vulkan.concurrent.OzFramebuffer
 
 class OzFramebuffers(
-    val ozVulkan: OzVulkan,
     val device: OzDevice,
-    val renderPass: OzRenderPass,
-    val imageViews: OzImageViews,
+    imageViews: OzImageViews,
+    renderpass: OzRenderPass,
     extent2D: Extent2D
 ) {
-    companion object {
-        val logger = KotlinLogging.logger { }
-    }
-
 
     val fbs = imageViews.imageViews.map {
-        OzFramebuffer(ozVulkan, device, renderPass, it, extent2D)
+        OzFramebuffer(
+            device,
+            FramebufferCreateInfo(
+                renderPass = renderpass.renderpass,
+                attachments = VkImageView_Array(listOf(it)),   //VkFramebuffer defines which VkImageView is to be which attachment.
+                width = extent2D.width,
+                height = extent2D.height,
+                layers = 1  //Image layer, not debug layer
+            )
+        )
     }
 
-    suspend fun onRecreateRenderpass(job: CompletableJob): List<Job> {
-        return fbs.map {
-            it.wait_clear(job)  //如果重建OzFramebuffers就不需要clear
+
+    fun destroy() {
+        fbs.forEach {
+            it.destroy()
+        }
+        OzVulkan.logger.info {
+            "framebuffers destroyed"
         }
     }
-
-
 
 
 

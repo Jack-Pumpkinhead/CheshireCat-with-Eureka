@@ -1,36 +1,25 @@
-package vulkan.drawing
+package vulkan.buffer
 
 import glm_.L
-import glm_.detail.Random.long
 import kool.*
-import mu.KotlinLogging
 import org.lwjgl.system.MemoryUtil.*
 import org.lwjgl.util.vma.Vma
 import org.lwjgl.util.vma.VmaAllocationCreateInfo
 import org.lwjgl.util.vma.VmaAllocatorCreateInfo
 import org.lwjgl.util.vma.VmaVulkanFunctions
 import org.lwjgl.vulkan.VkBufferCreateInfo
-import org.lwjgl.vulkan.VkDevice
-import org.lwjgl.vulkan.VkInstance
-import org.lwjgl.vulkan.VkInstanceCreateInfo.mallocStack
-import org.lwjgl.vulkan.VkPhysicalDevice
 import vkk.*
 import vulkan.OzDevice
+import vulkan.OzInstance
 import vulkan.OzPhysicalDevice
 import vulkan.OzVulkan
+import vulkan.drawing.VMABuffer
 
 class OzVMA(
-    val ozVulkan: OzVulkan,
+    val ozInstance: OzInstance,
     val ozPhysicalDevice: OzPhysicalDevice,
     val ozDevice: OzDevice
 ) {
-
-
-    companion object {
-
-        val logger = KotlinLogging.logger { }
-
-    }
 
     val pAllocator: Long
 
@@ -105,6 +94,23 @@ class OzVMA(
         vmaMemoryUsage = Vma.VMA_MEMORY_USAGE_GPU_ONLY
     )
 
+    fun of_uniform(bytes: Int) = create(
+        bytes = bytes.L,
+        bufferUsage = VkBufferUsage.UNIFORM_BUFFER_BIT.i,
+        memoryProperty = VkMemoryProperty.HOST_VISIBLE_BIT.i,
+        memoryProperty_prefered = VkMemoryProperty.HOST_COHERENT_BIT.i,
+        vmaMemoryUsage = Vma.VMA_MEMORY_USAGE_CPU_TO_GPU
+    )
+
+    //manual flush
+    fun of_uniform_mf(bytes: Int) = create(
+        bytes = bytes.L,
+        bufferUsage = VkBufferUsage.UNIFORM_BUFFER_BIT.i,
+        memoryProperty = VkMemoryProperty.HOST_VISIBLE_BIT.i,
+        vmaMemoryUsage = Vma.VMA_MEMORY_USAGE_CPU_TO_GPU
+    )
+
+
 
 
 
@@ -116,8 +122,8 @@ class OzVMA(
             memPutAddress(buffer.adr + VmaAllocatorCreateInfo.DEVICE, ozDevice.device.address())
             memPutAddress(buffer.adr + VmaAllocatorCreateInfo.PHYSICALDEVICE, ozPhysicalDevice.pd.address())
             val vulkanFunctions = VmaVulkanFunctions.mallocStack(it).set(
-                ozVulkan.instance.instance.capabilities.vkGetPhysicalDeviceProperties,
-                ozVulkan.instance.instance.capabilities.vkGetPhysicalDeviceMemoryProperties,
+                ozInstance.instance.capabilities.vkGetPhysicalDeviceProperties,
+                ozInstance.instance.capabilities.vkGetPhysicalDeviceMemoryProperties,
                 ozDevice.device.capabilities.vkAllocateMemory,
                 ozDevice.device.capabilities.vkFreeMemory,
                 ozDevice.device.capabilities.vkMapMemory,
@@ -146,14 +152,11 @@ class OzVMA(
         }.get(0)
     }
 
-
-    init {
-        ozVulkan.cleanups.addNode(this::destroy)
-        ozVulkan.cleanups.putEdge(ozDevice::destroy, this::destroy)
-    }
-
     fun destroy() {
         Vma.vmaDestroyAllocator(pAllocator)
+        OzVulkan.logger.info {
+            "${javaClass.name} destroyed"
+        }
     }
 
 }

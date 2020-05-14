@@ -9,7 +9,6 @@ import game.window.OzWindow
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import uno.glfw.glfw
 import uno.glfw.windowHint

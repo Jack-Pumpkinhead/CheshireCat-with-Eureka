@@ -1,5 +1,9 @@
+
 plugins {
+    id("org.springframework.boot") version "2.3.0.RC1"
+    id("io.spring.dependency-management") version "1.0.9.RELEASE"
     kotlin("jvm") version "1.3.72"
+    kotlin("plugin.spring") version "1.3.72"
 }
 
 tasks.withType<Test> {
@@ -20,12 +24,15 @@ val lwjglNatives = "natives-windows"
 repositories {
     mavenCentral()
     maven { url = uri("https://jitpack.io") }
+    maven { url = uri("https://repo.spring.io/milestone") }
 }
+
 
 //If something went wrong, replace testImplementation to implementation
 dependencies {
     implementation(kotlin("stdlib"))
     implementation(kotlin("stdlib-jdk8"))
+    implementation(kotlin("reflect"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.5")
     testImplementation("io.kotest:kotest-runner-junit5-jvm:4.0.2") // for kotest framework
     testImplementation("io.kotest:kotest-assertions-core-jvm:4.0.2") // for kotest core jvm assertions
@@ -175,6 +182,18 @@ dependencies {
         exclude("com.github.kotlin-graphics.uno-sdk")
     }
 
+
+    implementation("org.springframework.boot:spring-boot-starter") {
+        exclude("org.slf4j")
+        exclude("ch.qos.logback")
+        exclude("org.apache.logging.log4j")
+    }
+//    testImplementation("org.springframework.boot:spring-boot-starter-test") {
+//        exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
+//    }
+    implementation("org.reflections", "reflections", "0.9.12")
+
+    implementation("io.github.libktx:ktx-freetype:1.9.10-b6")
 
 }
 

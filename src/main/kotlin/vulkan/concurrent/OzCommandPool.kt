@@ -4,108 +4,54 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.actor
 import kotlinx.coroutines.selects.select
-import mu.KotlinLogging
 import vkk.VkCommandBufferLevel
-import vkk.VkCommandPoolCreate
-import vkk.VkCommandPoolCreateFlags
 import vkk.entities.VkCommandPool
 import vkk.identifiers.CommandBuffer
-import vkk.identifiers.Device
 import vkk.vk10.*
 import vkk.vk10.structs.CommandBufferAllocateInfo
-import vkk.vk10.structs.CommandPoolCreateInfo
 import vulkan.OzDevice
-import vulkan.OzVulkan
 
 class OzCommandPool(
-    val ozVulkan: OzVulkan,
     val device: OzDevice,
-    val queueFamilyIndex: Int,
-    val flags: VkCommandPoolCreateFlags = VkCommandPoolCreate(0).i
+    val commandPool: VkCommandPool
 ) {
 
     sealed class Action {
 
-        abstract operator fun invoke(device: Device, commandPool: VkCommandPool)
-
-        class AllocateCommandBuffer(
+        class AllocateCB(
             val level: VkCommandBufferLevel = VkCommandBufferLevel.PRIMARY,
             val resp: CompletableDeferred<CommandBuffer>
-        ) : Action() {
-            override fun invoke(device: Device, commandPool: VkCommandPool) {
-                resp.complete(
-                    device.allocateCommandBuffer(CommandBufferAllocateInfo(commandPool, level))
-                )
-            }
-        }
-        class AllocateCommandBuffers(
+        ) : Action()
+
+        class AllocateCBs(
             val level: VkCommandBufferLevel = VkCommandBufferLevel.PRIMARY,
-            val size: Int,
+            val count: Int,
             val resp: CompletableDeferred<Array<CommandBuffer>>
-        ) : Action() {
-            override fun invoke(device: Device, commandPool: VkCommandPool) {
-                resp.complete(
-                    device.allocateCommandBuffers(CommandBufferAllocateInfo(commandPool, level, size))
-                )
-            }
-        }
+        ) : Action()
 
-
-        class FreeCommandBuffer(val cb: CommandBuffer, val resp: CompletableJob) : Action() {
-            override fun invoke(device: Device, commandPool: VkCommandPool) {
-                device.freeCommandBuffers(commandPool, cb)
-                resp.complete()
-            }
-        }
-
-        class Reset(val resp: CompletableJob) : Action() {
-            override fun invoke(device: Device, commandPool: VkCommandPool) {
-                device.resetCommandPool(commandPool)
-                resp.complete()
-            }
-        }
-    }
-
-
-    companion object {
-
-        val logger = KotlinLogging.logger { }
+        class FreeCB(val cb: CommandBuffer, val resp: CompletableJob) : Action()
+        class Reset(val resp: CompletableJob) : Action()
+        //Trimming may be an expensive operation, and should not be called frequently.
+        class Trim(val resp: CompletableJob) : Action()
+        class WaitComplete(val resp: CompletableJob) : Action()
 
     }
 
-    val commandPool: VkCommandPool = device.device.createCommandPool(
-        CommandPoolCreateInfo(queueFamilyIndex, flags)
-    )
 
-
-    val wait = Channel<Pair<Job, CompletableJob>>(Channel.UNLIMITED)
-    val wait_reset = Channel<Triple<Job, CompletableJob, CompletableJob>>(Channel.UNLIMITED)
-
-    suspend fun wait(toWait: Job): Job {
-        val resp = Job()
-        wait.send(toWait to resp)
-        return resp
-    }
-    suspend fun wait_reset(toWait: Job): Pair<CompletableJob, CompletableJob> {
-        val resp = Job()
-        val reset = Job()
-        wait_reset.send(Triple(toWait, resp, reset))
-        return resp to reset
-    }
     suspend fun allocate(): CompletableDeferred<CommandBuffer> {
         val resp = CompletableDeferred<CommandBuffer>()
-        actor.send(Action.AllocateCommandBuffer(resp = resp))
+        actor.send(Action.AllocateCB(resp = resp))
         return resp
     }
     suspend fun allocate(size: Int): CompletableDeferred<Array<CommandBuffer>> {
         val resp = CompletableDeferred<Array<CommandBuffer>>()
-        actor.send(Action.AllocateCommandBuffers(size = size, resp = resp))
+        actor.send(Action.AllocateCBs(count = size, resp = resp))
         return resp
     }
 
     suspend fun free(cb: CommandBuffer): Job {
         val resp = Job()
-        actor.send(Action.FreeCommandBuffer(cb, resp))
+        actor.send(Action.FreeCB(cb, resp))
         return resp
     }
     suspend fun reset(): Job {
@@ -113,53 +59,86 @@ class OzCommandPool(
         actor.send(Action.Reset(resp))
         return resp
     }
+    suspend fun trim(): Job {
+        val resp = Job()
+        actor.send(Action.Trim(resp))
+        return resp
+    }
+    suspend fun waitComplete(): Job {
+        val resp = Job()
+        actor.send(Action.WaitComplete(resp))
+        return resp
+    }
 
+
+
+    private val wait = TaskA()
+    private val wait_reset = TaskAB()
+    suspend fun wait(toWait: Job) = wait.wait(toWait)
+    suspend fun wait_im(toWait: Job) = wait.wait(toWait).join()
+    suspend fun wait_reset(toWait: Job) = wait_reset.wait_reset(toWait)
+    suspend fun wait_reset_im(toWait: Job) = wait_reset.wait_reset_im(toWait)
 
 
     val actor = device.scope.actor<Action> {
-        logger.info {
-            "commandpool actor '$queueFamilyIndex.$flags' start"
-        }
-
         while (isActive) {
             select<Unit> {
-                wait.onReceive { (toWait, resp) ->
+                wait.channel.onReceive { (resp, toWait) ->
                     resp.complete()
                     toWait.join()
                 }
-                wait_reset.onReceive { (toWait, resp, reseted) ->
+                wait_reset.channel.onReceive { (resp, toWait, reseted) ->
                     resp.complete()
                     toWait.join()
+                    var msg = channel.poll()
+                    while (msg != null) {
+                        when (msg) {
+                            is Action.AllocateCB -> msg.resp.cancel()
+                            is Action.AllocateCBs -> msg.resp.cancel()
+                            is Action.FreeCB -> msg.resp.cancel()
+                            is Action.Reset -> msg.resp.cancel()
+                            is Action.Trim -> msg.resp.cancel()
+                        }
+                        msg = channel.poll()
+                    }
                     device.device.resetCommandPool(commandPool)
+                    device.device.trimCommandPool(commandPool, 0)
                     reseted.complete()
                 }
 
-                channel.onReceive {
-                    it(device.device, commandPool)
+                channel.onReceive {msg ->
+                    when (msg) {
+                        is Action.AllocateCB -> msg.resp.complete(
+                            device.device.allocateCommandBuffer(CommandBufferAllocateInfo(commandPool, msg.level))
+                        )
+                        is Action.AllocateCBs -> msg.resp.complete(
+                            device.device.allocateCommandBuffers(CommandBufferAllocateInfo(commandPool, msg.level, msg.count))
+                        )
+                        is Action.FreeCB -> {
+                            device.device.freeCommandBuffers(commandPool, msg.cb)
+                            msg.resp.complete()
+                        }
+                        is Action.Reset -> {
+                            device.device.resetCommandPool(commandPool)
+                            msg.resp.complete()
+                        }
+                        is Action.Trim -> {
+                            device.device.trimCommandPool(commandPool, 0)
+                            msg.resp.complete()
+                        }
+                        is Action.WaitComplete -> msg.resp.complete()
+                    }
                 }
             }
         }
-
-// never reached
-//        logger.info {
-//            "commandpool actor '$queueFamilyIndex.$flags' finish"
-//        }
-
-//        destroy()
     }
 
 
-
-    init {
-        ozVulkan.cleanups.addNode(this::destroy)
-        ozVulkan.cleanups.putEdge(device::destroy, this::destroy)
-    }
 
     fun destroy() {
+//        actor.close()
         device.device.destroy(commandPool)
     }
-
-
 
 
 

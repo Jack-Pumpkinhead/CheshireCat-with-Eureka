@@ -2,39 +2,35 @@ package vulkan.drawing
 
 import kool.*
 import kotlinx.coroutines.runBlocking
-import mu.KotlinLogging
-import org.lwjgl.system.MemoryStack
-import org.lwjgl.system.MemoryUtil
-import vkk.VkPipelineBindPoint
-import vkk.VkSubpassContents
-import vkk.entities.VkBuffer
-import vkk.entities.VkBuffer_Array
-import vkk.entities.VkDeviceSize
-import vkk.entities.VkDeviceSize_Array
+import org.springframework.beans.factory.getBean
+import vkk.entities.*
 import vkk.identifiers.CommandBuffer
-import vkk.memCopy
-import vkk.vk10.begin
-import vkk.vk10.beginRenderPass
-import vkk.vk10.bindVertexBuffers
-import vkk.vk10.structs.*
-import vulkan.command.OzCB
-import vulkan.concurrent.OzFramebuffer
-import java.nio.FloatBuffer
-import java.nio.IntBuffer
-import java.nio.MappedByteBuffer
+import vulkan.OzCommandPools
+import vulkan.buffer.OzVMA
+import vulkan.OzFramebuffers
+import vulkan.OzSwapchain
+import vulkan.OzVulkan
+import vulkan.command.CopyBuffer
+import vulkan.command.DrawCmd
+import vulkan.pipelines.OzGraphicPipelines
+import vulkan.pipelines.layout.OzUniformMatrixDynamic
+import vulkan.pipelines.layout.OzPipelineLayouts
 
 class OzVertexDataImmutable(
     vma: OzVMA,
-    val ozcb: OzCB,
+    val copyBuffer: CopyBuffer,
+    val commandPools: OzCommandPools,
+    val uniformMatrixDynamic: OzUniformMatrixDynamic,
+
+    var swapchain: OzSwapchain,
+    var framebuffers: OzFramebuffers,
+    var pipelines: OzGraphicPipelines,
+
     val vertices: FloatArray,
-    val indices: IntArray
+    val indices: IntArray,
+    val objectIndex: Int,
+    val ozVulkan: OzVulkan
 ) {
-
-    companion object {
-
-        val logger = KotlinLogging.logger { }
-
-    }
 
     val vbytes = vertices.size * Float.BYTES
     val ibytes = indices.size * Int.BYTES
@@ -44,7 +40,6 @@ class OzVertexDataImmutable(
     val indexBuffer_device_local: VMABuffer
 
     var drawCmd: List<CommandBuffer>
-
 
 
 
@@ -71,22 +66,25 @@ class OzVertexDataImmutable(
         indexBuffer_device_local = vma.of_IndexBuffer_device_local(ibytes)
 
         runBlocking {
-            ozcb.copyBuffer(vertexBuffer.pBuffer, vertexBuffer_device_local.pBuffer, vbytes)
-            ozcb.copyBuffer(indexBuffer.pBuffer, indexBuffer_device_local.pBuffer, ibytes)
+            copyBuffer.copyBuffer(vertexBuffer.pBuffer, vertexBuffer_device_local.pBuffer, vbytes)
+            copyBuffer.copyBuffer(indexBuffer.pBuffer, indexBuffer_device_local.pBuffer, ibytes)
         }
         vertexBuffer.destroy()
         indexBuffer.destroy()
 
-        drawCmd = runBlocking { getCmd() }
+        drawCmd = runBlocking {
+            getCmd()
+        }
         runBlocking {
             register()
         }
     }
 
     suspend fun getCmd(): List<CommandBuffer> {
+        //need to reload framebuffers!
 
-        return ozcb.ozVulkan.framebuffer.fbs.map {
-            val cb = ozcb.commandPools.graphicCP.allocate().await()
+        return framebuffers.fbs.mapIndexed { index, framebuffer ->
+            val cb = commandPools.graphicCP.allocate().await()
 
             /*it.recordDraw(
                 cb,
@@ -95,45 +93,59 @@ class OzVertexDataImmutable(
                 indexBuffer = VkBuffer(indexBuffer_device_local.pBuffer),
                 count = indices.size
             )*/
-            ozcb.recordDrawUniform(
+            DrawCmd.recordDrawUniformDynamic(
                 cb = cb,
-                framebuffer = it.framebuffer,
-                buffer_array = VkBuffer_Array(1) { VkBuffer(vertexBuffer_device_local.pBuffer) },
-                indexBuffer =VkBuffer(indexBuffer_device_local.pBuffer),
-                count = indices.size,offset_array = VkDeviceSize_Array(longArrayOf(0))
+                framebuffer = framebuffer,
+                pipeline = pipelines.hellomvp2.graphicsPipeline,
+                pipelineLayout = pipelines.hellomvp2.layout,
+                descriptorSets = VkDescriptorSet_Array(
+                    listOf(uniformMatrixDynamic.descriptorSets[index])
+                ),
+                dynamicOffsets = intArrayOf(objectIndex * uniformMatrixDynamic.matrixBuffers[index].alignment),
+                buffer_array = VkBuffer_Array(listOf(VkBuffer(vertexBuffer_device_local.pBuffer))),
+                offset_array = VkDeviceSize_Array(listOf(VkDeviceSize(0))),
+                indexBuffer = VkBuffer(indexBuffer_device_local.pBuffer),
+                count = indices.size
             )
+            cb
         }
     }
 
     suspend fun register() {
-        ozcb.ozVulkan.framebuffer.fbs.asSequence().zip(drawCmd.asSequence()).forEach { (fb, cb) ->
-            fb.actor.send(OzFramebuffer.Action.RegisterDraw(arrayOf(cb)))
+        swapchain.images.forEachIndexed { index, image ->
+            image.add(drawCmd[index])
         }
     }
     suspend fun unregister() {
-        ozcb.ozVulkan.framebuffer.fbs.asSequence().zip(drawCmd.asSequence()).forEach { (fb, cb) ->
-            fb.actor.send(OzFramebuffer.Action.UnRegisterDraw(arrayOf(cb)))
+        swapchain.images.forEachIndexed { index, image ->
+            image.remove(drawCmd[index])
         }
     }
 
+//    init {
+//        ozVulkan.afterSwapchainRecreateEvent += this::afterSwapchainRecreated
+//    }
 
-    fun afterSwapchainRecreated() {
-        runBlocking {
-            drawCmd = getCmd()
-            register()
+    //注意OzObjects register/unregister影响调用
+    //need to be called after swapchain recreated
+    suspend fun afterSwapchainRecreated() {
+        drawCmd.forEach {
+            commandPools.graphicCP.free(it)
         }
-    }
-
-    init {
-        ozcb.ozVulkan.after.add(this::afterSwapchainRecreated)
+        swapchain = ozVulkan.swapchainContext.getBean()
+        framebuffers = ozVulkan.swapchainContext.getBean()
+        pipelines = ozVulkan.swapchainContext.getBean()
+        drawCmd = getCmd()
+        register()
     }
 
 
     fun destroy() {
-        ozcb.ozVulkan.after.remove(this::afterSwapchainRecreated)
-
         runBlocking {
             unregister()
+            drawCmd.forEach {
+                commandPools.graphicCP.free(it)
+            }
         }
 
         vertexBuffer_device_local.destroy()

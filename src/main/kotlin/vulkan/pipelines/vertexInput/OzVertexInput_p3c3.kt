@@ -4,14 +4,13 @@ import kool.BYTES
 import mu.KotlinLogging
 import vkk.VkFormat
 import vkk.VkVertexInputRate
+import vkk.vk10.structs.PipelineVertexInputStateCreateInfo
 import vkk.vk10.structs.VertexInputAttributeDescription
 import vkk.vk10.structs.VertexInputBindingDescription
 
-class OzVertexInput33 {
+class OzVertexInput_p3c3 {
 
     companion object {
-
-        val logger = KotlinLogging.logger { }
 
         fun bytes(vertexCount: Int) = (3 + 3) * Float.BYTES * vertexCount
 
@@ -33,6 +32,11 @@ class OzVertexInput33 {
         location = 1,
         format = VkFormat.R32G32B32_SFLOAT,
         offset = 3 * Float.BYTES
+    )
+
+    val inputState = PipelineVertexInputStateCreateInfo(
+        vertexBindingDescriptions = arrayOf(bindingDescription),
+        vertexAttributeDescriptions = arrayOf(posAD, colorAD)
     )
 
 }

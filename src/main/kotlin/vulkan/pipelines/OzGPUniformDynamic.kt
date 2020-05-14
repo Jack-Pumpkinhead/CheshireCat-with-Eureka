@@ -2,7 +2,8 @@ package vulkan.pipelines
 
 import glm_.vec4.Vec4
 import vkk.*
-import vkk.entities.*
+import vkk.entities.VkPipeline
+import vkk.entities.VkPipelineCache
 import vkk.vk10.createGraphicsPipeline
 import vkk.vk10.structs.*
 import vulkan.OzDevice
@@ -11,7 +12,10 @@ import vulkan.OzVulkan
 import vulkan.pipelines.layout.OzPipelineLayouts
 import vulkan.pipelines.vertexInput.OzVertexInputs
 
-class OzGraphicPipelineHelloBuffer(
+/**
+ * Created by CowardlyLion on 2020/5/10 21:43
+ */
+class OzGPUniformDynamic(
     val device: OzDevice,
     shadermodule: OzShaderModules,
     vertexInputs: OzVertexInputs,
@@ -19,13 +23,15 @@ class OzGraphicPipelineHelloBuffer(
     renderPass: OzRenderPass,
     subpass: Int = 0,
     extent2D: Extent2D
-) {
+){
 
+    val layout = pipelineLayouts.uniformDynamic
     val graphicsPipeline: VkPipeline
 
     init {
 
-        val shaderstageCI_vert = shadermodule.getPipelineShaderStageCI("hellobuffer.vert")
+        val shaderstageCI_vert = shadermodule.getPipelineShaderStageCI("hellomvp2.vert")
+//        val shaderstageCI_vert = shadermodule.getPipelineShaderStageCI("hellomvp.vert")
         val shaderstageCI_frag = shadermodule.getPipelineShaderStageCI("basic.frag")
 
 
@@ -58,7 +64,8 @@ class OzGraphicPipelineHelloBuffer(
             polygonMode = VkPolygonMode.FILL,
             lineWidth = 1.0f,
             cullMode = VkCullMode.BACK_BIT.i,
-            frontFace = VkFrontFace.CLOCKWISE,
+//            frontFace = VkFrontFace.CLOCKWISE,
+            frontFace = VkFrontFace.COUNTER_CLOCKWISE,
             depthBiasEnable = false,
             depthBiasConstantFactor = 0.0f,
             depthBiasClamp = 0.0f,
@@ -103,7 +110,7 @@ class OzGraphicPipelineHelloBuffer(
             depthStencilState = null,
             colorBlendState = colorBlendSCI,
             dynamicState = null,
-            layout = pipelineLayouts.empty,
+            layout = layout,
             renderPass = renderPass.renderpass,
             subpass = subpass,
             basePipelineHandle = VkPipeline.NULL,
@@ -122,7 +129,9 @@ class OzGraphicPipelineHelloBuffer(
     fun destroy() {
         device.device.destroy(graphicsPipeline)
         OzVulkan.logger.debug {
-            "pipeline 'hellobuffer' destroyed"
+            "pipeline 'hellomvp2' destroyed"
         }
     }
+
+
 }

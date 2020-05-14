@@ -1,38 +1,37 @@
 package vulkan.pipelines
 
-import mu.KotlinLogging
 import vkk.vk10.structs.Extent2D
 import vulkan.OzDevice
 import vulkan.OzRenderPass
 import vulkan.OzVulkan
+import vulkan.pipelines.layout.OzPipelineLayouts
+import vulkan.pipelines.vertexInput.OzVertexInputs
 
 /**
  * Created by CowardlyLion on 2020/5/2 22:42
  */
 class OzGraphicPipelines(
-    val ozVulkan: OzVulkan,
     val device: OzDevice,
-    val shadermodule: OzShaderModule,
-    val renderpass: OzRenderPass,
+    shadermodule: OzShaderModules,
+    vertexInputs: OzVertexInputs,
+    pipelineLayouts: OzPipelineLayouts,
+    renderpass: OzRenderPass,
     extent2D: Extent2D
 ) {
 
-    companion object {
-
-        val logger = KotlinLogging.logger { }
-
-    }
-
-    var hellobuffer = OzGraphicPipelineHelloBuffer(ozVulkan, device, shadermodule, renderpass, extent2D)
-    var hellomvp = OzGPUniform(ozVulkan, device, shadermodule, renderpass, extent2D)
+    var hellobuffer =
+        OzGraphicPipelineHelloBuffer(device, shadermodule, vertexInputs, pipelineLayouts, renderpass, 0, extent2D)
+    var hellomvp = OzGPUniform(device, shadermodule, vertexInputs, pipelineLayouts, renderpass, 0, extent2D)
+    var hellomvp2 = OzGPUniformDynamic(device, shadermodule, vertexInputs, pipelineLayouts, renderpass, 0, extent2D)
 
 
-    fun recreate(extent2D: Extent2D) {
-        ozVulkan.cleanup(hellobuffer::destroy)
-        ozVulkan.cleanup(hellomvp::destroy)
-        hellobuffer = OzGraphicPipelineHelloBuffer(ozVulkan, device, shadermodule, renderpass, extent2D)
-        hellomvp = OzGPUniform(ozVulkan, device, shadermodule, renderpass, extent2D)
-
+    fun destroy() {
+        hellobuffer.destroy()
+        hellomvp.destroy()
+        hellomvp2.destroy()
+        OzVulkan.logger.info {
+            "graphicPipelines destroyed"
+        }
     }
 
 

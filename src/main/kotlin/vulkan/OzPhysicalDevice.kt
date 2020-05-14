@@ -1,7 +1,6 @@
 package vulkan
 
 import game.main.OzConstants
-import mu.KotlinLogging
 import vkk.VkPhysicalDeviceType
 import vkk.identifiers.PhysicalDevice
 import vkk.vk10.enumerateDeviceExtensionProperties
@@ -16,9 +15,7 @@ import vkk.vk10.structs.QueueFamilyProperties
 /**
  * Created by CowardlyLion on 2020/4/20 19:46
  */
-class OzPhysicalDevice(val ozVulkan: OzVulkan, val ozInstance: OzInstance, val pd: PhysicalDevice) {
-
-    val logger = KotlinLogging.logger { }
+class OzPhysicalDevice(val pd: PhysicalDevice) {
 
     val properties: PhysicalDeviceProperties = pd.properties
     val queueFamilyProperties: Array<QueueFamilyProperties> =pd.queueFamilyProperties
@@ -30,9 +27,7 @@ class OzPhysicalDevice(val ozVulkan: OzVulkan, val ozInstance: OzInstance, val p
                 features.geometryShader &&
                 extensions.containsAll(OzConstants.Extensions)
 
-    fun printExtensions() {
-        logger.info("exts of physical device: ${properties.deviceName}")
-        extensions.forEach { logger.info("\t$it") }
-    }
+//    val min = properties.limits.minUniformBufferOffsetAlignment
+
 
 }

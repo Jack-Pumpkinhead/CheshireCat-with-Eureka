@@ -35,6 +35,8 @@ object OzConstants {
 
     val InstanceExtensions: ArrayList<String> = glfw.requiredInstanceExtensions
 
+    val OzDefaultName = "Oz-Default"
+
     init {
 //        vkk.DEBUG = false
         vkk.DEBUG = debug

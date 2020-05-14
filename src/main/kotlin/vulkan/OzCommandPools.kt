@@ -1,26 +1,53 @@
 package vulkan
 
 import kotlinx.coroutines.CompletableJob
-import mu.KotlinLogging
+import kotlinx.coroutines.Job
 import vkk.VkCommandPoolCreate
+import vkk.vk10.createCommandPool
+import vkk.vk10.structs.CommandPoolCreateInfo
 import vulkan.concurrent.OzCommandPool
-import vulkan.util.SurfaceSwapchainSupport
 
-class OzCommandPools(val ozVulkan: OzVulkan, val device: OzDevice, surfaceSupport: SurfaceSwapchainSupport) {
+class OzCommandPools(val device: OzDevice) {
 
-    companion object{
-        val logger = KotlinLogging.logger { }
+    //can create multiple command pools
+    val graphicCP = of(queueFamilyIndex = device.surfaceSupport.queuefamily_graphic)
+    val graphicMutableCP = of(queueFamilyIndex = device.surfaceSupport.queuefamily_graphic)
+    val transferCP = of(VkCommandPoolCreate.TRANSIENT_BIT.i, device.surfaceSupport.queuefamily_transfer)
+
+    val cps = listOf(
+        graphicCP,
+        graphicMutableCP,
+        transferCP
+    )
+
+    fun of(flags: Int = VkCommandPoolCreate(0).i, queueFamilyIndex: Int): OzCommandPool {
+        return OzCommandPool(device,
+            device.device.createCommandPool(CommandPoolCreateInfo(flags, queueFamilyIndex))
+        )
+    }
+
+    val resets = listOf(
+        graphicCP, graphicMutableCP
+    )
+    val waits = listOf(
+        transferCP
+    )
+
+    suspend fun onRecreateSwapchain(job: CompletableJob): List<Job> {
+        waits.forEach {
+            it.wait(job)
+        }
+        return resets.map { it.wait_reset_im(job) }
     }
 
 
-    val graphicCP = OzCommandPool(ozVulkan, device, surfaceSupport.queuefamily_graphic, 0)
-    val transferCP = OzCommandPool(ozVulkan, device, surfaceSupport.queuefamily_transfer, VkCommandPoolCreate.TRANSIENT_BIT.i)
-
-    suspend fun onRecreateRenderpass(job: CompletableJob): List<Pair<CompletableJob, CompletableJob>> {
-        return listOf(
-            graphicCP.wait_reset(job),
-            transferCP.wait_reset(job)
-        )
+    fun destroy() {
+        cps.forEach {
+            it.destroy()
+        }
+        OzVulkan.logger.info {
+            "${javaClass.name} destroyed"
+        }
     }
 
 

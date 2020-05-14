@@ -1,11 +1,14 @@
 package vulkan.drawing
 
 import game.loop.FrameLoop
+import kotlinx.coroutines.runBlocking
+import math.matrix.MVP
 import mu.KotlinLogging
+import org.springframework.beans.factory.getBean
 import vulkan.OzDevice
 import vulkan.OzVulkan
 
-class Drawing(val ozVulkan: OzVulkan, val device: OzDevice, val frameLoop: FrameLoop) {
+class Drawing(val ozVulkan: OzVulkan, val frameLoop: FrameLoop) {
 
     companion object {
 
@@ -18,19 +21,24 @@ class Drawing(val ozVulkan: OzVulkan, val device: OzDevice, val frameLoop: Frame
 
 //    val triangle: OzVertexDataImmutable = simpleObject.getTriangle()
     val rectangle: OzVertexDataImmutable = simpleObject.getRectangle()
+    //TODO: use OzObjects for management
 
+    init {
+        val ozObjects = ozVulkan.swapchainContext.getBean<OzObjects>()
+        runBlocking {
+            ozObjects.register(OzObject(rectangle, MVP(ozVulkan)))
+        }
 
+    }
 
     var ii = 0
 
+//    val drawImage = ozVulkan.swapchainContext.getBean<DrawImage>()
+//    concurrent problem
+
     fun draw() {
         ii++
-//        r1.destroy()
-//        r1 = simpleObject.getR(ii.toFloat() / 100000f)
-//        r2.destroy()
-//        r2 = simpleObject.getRR(ii.toFloat() / 100000f)
-
-        val drawSuccess = device.graphicQ.drawImage()
+        val drawSuccess = ozVulkan.swapchainContext.getBean<DrawImage>().drawImage()
 //        if (ii % 10000 == 0) {
 //            logger.info {
 //                "drawSuccess: $drawSuccess"
@@ -42,10 +50,6 @@ class Drawing(val ozVulkan: OzVulkan, val device: OzDevice, val frameLoop: Frame
     }
 
 
-    init {
-        ozVulkan.cleanups.addNode(this::destroy)
-        ozVulkan.cleanups.putEdge(ozVulkan.vma::destroy, this::destroy)
-    }
 
     fun destroy() {
 //        triangle.destroy()

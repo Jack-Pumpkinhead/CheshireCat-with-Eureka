@@ -1,11 +1,12 @@
 package vulkan.drawing
 
-import kool.*
 import mu.KotlinLogging
+import org.springframework.beans.factory.getBean
 import vulkan.OzVulkan
+import vulkan.buffer.OzVMA
 import kotlin.random.Random
 
-class SimpleObject(val ozVulkan: OzVulkan) {
+class SimpleObject(val vulkan: OzVulkan) {
 
     companion object {
 
@@ -24,7 +25,17 @@ class SimpleObject(val ozVulkan: OzVulkan) {
             0, 1, 2
         )
 
-        return OzVertexDataImmutable(ozVulkan.vma, ozVulkan.cb, vertices, indices)
+//        return OzVertexDataImmutable(ozVulkan.vma, ozVulkan.cb, vertices, indices)
+        return OzVertexDataImmutable(
+            vulkan.swapchainContext.getBean(),
+            vulkan.swapchainContext.getBean(),
+            vulkan.swapchainContext.getBean(),
+            vulkan.swapchainContext.getBean(),
+            vulkan.swapchainContext.getBean(),
+            vulkan.swapchainContext.getBean(),
+            vulkan.swapchainContext.getBean(),
+            vertices, indices, 0, vulkan
+        )
     }
     fun getRectangle(): OzVertexDataImmutable {
         val vertices = floatArrayOf(
@@ -38,7 +49,17 @@ class SimpleObject(val ozVulkan: OzVulkan) {
             0, 1, 2, 2, 3, 0
         )
 
-        return OzVertexDataImmutable(ozVulkan.vma, ozVulkan.cb, vertices, indices)
+//        return OzVertexDataImmutable(vulkan.vma, vulkan.cb, vertices, indices)
+        return OzVertexDataImmutable(
+            vulkan.swapchainContext.getBean(),
+            vulkan.swapchainContext.getBean(),
+            vulkan.swapchainContext.getBean(),
+            vulkan.swapchainContext.getBean(),
+            vulkan.swapchainContext.getBean(),
+            vulkan.swapchainContext.getBean(),
+            vulkan.swapchainContext.getBean(),
+            vertices, indices, 0, vulkan
+        )
     }
 
 
@@ -67,7 +88,17 @@ class SimpleObject(val ozVulkan: OzVulkan) {
         println()
 */
 
-        return OzVertexDataImmutable(ozVulkan.vma, ozVulkan.cb, vertices, indices)
+//        return OzVertexDataImmutable(vulkan.vma, vulkan.cb, vertices, indices)
+        return OzVertexDataImmutable(
+            vulkan.swapchainContext.getBean(),
+            vulkan.swapchainContext.getBean(),
+            vulkan.swapchainContext.getBean(),
+            vulkan.swapchainContext.getBean(),
+            vulkan.swapchainContext.getBean(),
+            vulkan.swapchainContext.getBean(),
+            vulkan.swapchainContext.getBean(),
+            vertices, indices, 2, vulkan
+        )
     }
 
 }

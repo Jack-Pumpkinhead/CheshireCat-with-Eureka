@@ -5,4 +5,4 @@ package game.main
  */
 
 typealias CleanUpMethod = () -> Unit
-typealias AfterSwapchainRecreated = () -> Unit
+typealias AfterSwapchainRecreated = suspend () -> Unit

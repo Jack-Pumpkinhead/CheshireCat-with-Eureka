@@ -1,18 +1,11 @@
-package vulkan.drawing
+package vulkan.buffer
 
 import kool.Stack
-import mu.KotlinLogging
 import org.lwjgl.system.MemoryUtil.NULL
 import org.lwjgl.util.vma.Vma
-import vulkan.OzVulkan
 
-class OzVMABuffer(ozVulkan: OzVulkan, val vma: OzVMA, val pBuffer: Long, val pAllocation: Long) {
+class OzVMABuffer(val vma: OzVMA, val pBuffer: Long, val pAllocation: Long) {
 
-    companion object {
-
-        val logger = KotlinLogging.logger { }
-
-    }
 
     var mapped: Long = NULL
 
@@ -41,13 +34,6 @@ class OzVMABuffer(ozVulkan: OzVulkan, val vma: OzVMA, val pBuffer: Long, val pAl
 
     fun flushMapped(offset: Long, size: Long) {
         Vma.vmaFlushAllocation(vma.pAllocator, pAllocation, offset, size)
-    }
-
-
-
-    init {
-        ozVulkan.cleanups.addNode(this::destroy)
-        ozVulkan.cleanups.putEdge(vma::destroy, this::destroy)
     }
 
 

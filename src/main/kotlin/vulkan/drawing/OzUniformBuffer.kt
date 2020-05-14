@@ -7,8 +7,6 @@ import glm_.vec3.Vec3
 import kool.Stack
 import kool.adr
 import kool.remSize
-import mu.KotlinLogging
-import org.lwjgl.system.MemoryUtil
 import org.lwjgl.util.vma.Vma
 import vkk.VkBufferUsage
 import vkk.VkMemoryProperty
@@ -16,22 +14,13 @@ import vkk.entities.VkDeviceSize
 import vkk.memCopy
 import vkk.vk10.structs.Extent2D
 import vulkan.OzDevice
-import vulkan.OzVulkan
-import kotlin.time.TimeSource
-import kotlin.time.measureTime
+import vulkan.buffer.OzVMA
 
 /**
  * Created by CowardlyLion on 2020/5/5 13:04
  */
-class OzUniformBuffer(ozVulkan: OzVulkan, val device: OzDevice, val vma: OzVMA, val count: Int) {
+class OzUniformBuffer(val device: OzDevice, val vma: OzVMA, val count: Int) {
 
-
-    companion object {
-
-        val logger = KotlinLogging.logger { }
-
-
-    }
 
     //need to recreate when swapchain recreated //maybe not
     val buffers = List<VMABuffer>(count){ of(it.L)}
@@ -77,10 +66,6 @@ class OzUniformBuffer(ozVulkan: OzVulkan, val device: OzDevice, val vma: OzVMA, 
 
     }
 
-    init {
-        ozVulkan.cleanups.addNode(this::destroy)
-        ozVulkan.cleanups.putEdge(vma::destroy, this::destroy)
-    }
 
     fun destroy() {
         buffers.forEach {

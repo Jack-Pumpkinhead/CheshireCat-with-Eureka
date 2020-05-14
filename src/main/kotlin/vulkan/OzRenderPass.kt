@@ -1,26 +1,26 @@
 package vulkan
 
-import mu.KotlinLogging
 import org.lwjgl.vulkan.VK10
 import vkk.*
 import vkk.entities.VkRenderPass
 import vkk.vk10.createRenderPass
 import vkk.vk10.structs.*
 
-class OzRenderPass(val ozVulkan: OzVulkan, val device: OzDevice, format: VkFormat) {
-
-    val logger = KotlinLogging.logger { }
+class OzRenderPass(val device: OzDevice, format: VkFormat) {
 
     val renderpass: VkRenderPass
 
     init {
-        val attachmentDescription = AttachmentDescription(
+        val attachment_0 = AttachmentDescription(
             format = format,
             samples = VkSampleCount._1_BIT,
+
             loadOp = VkAttachmentLoadOp.CLEAR,
             storeOp = VkAttachmentStoreOp.STORE,
+
             stencilLoadOp = VkAttachmentLoadOp.DONT_CARE,
             stencilStoreOp = VkAttachmentStoreOp.DONT_CARE,
+
             initialLayout = VkImageLayout.UNDEFINED,
             finalLayout = VkImageLayout.PRESENT_SRC_KHR
         )
@@ -31,9 +31,10 @@ class OzRenderPass(val ozVulkan: OzVulkan, val device: OzDevice, format: VkForma
             layout = VkImageLayout.COLOR_ATTACHMENT_OPTIMAL
         )
 
-        val subpassDescription = SubpassDescription(
+        val subpass_0 = SubpassDescription(
             pipelineBindPoint = VkPipelineBindPoint.GRAPHICS,
             colorAttachments = arrayOf(attachmentReference) //The index of the attachment in this array is directly referenced from the fragment shader with the layout(location = 0) out vec4 outColor directive!
+                                                            // layout in fragment shader --- colorAttachments     then map to attachments
         )
 
         val subpassDependency = SubpassDependency(
@@ -45,9 +46,11 @@ class OzRenderPass(val ozVulkan: OzVulkan, val device: OzDevice, format: VkForma
             dstAccessMask = VkAccess.COLOR_ATTACHMENT_WRITE_BIT.i
         )
 
+        //用subpasses可以做到分几次绘制 (最后绘制界面之类)
         val renderPassCI = RenderPassCreateInfo(
-            attachments = arrayOf(attachmentDescription),
-            subpasses = arrayOf(subpassDescription),
+            attachments = arrayOf(attachment_0),    //only images can be used for attachments. attachments are descriptions of resources used during rendering.
+                                                    //renderpass.attachments --- framebuffer.attachments      lines up
+            subpasses = arrayOf(subpass_0),
             dependencies = arrayOf(subpassDependency)
         )
 
@@ -55,13 +58,11 @@ class OzRenderPass(val ozVulkan: OzVulkan, val device: OzDevice, format: VkForma
 
     }
 
-    init {
-        ozVulkan.cleanups.addNode(this::destroy)
-        ozVulkan.cleanups.putEdge(device::destroy, this::destroy)
-    }
-
     fun destroy() {
         device.device.destroy(renderpass)
+        OzVulkan.logger.info {
+            "${javaClass.name} destroyed"
+        }
     }
 
 

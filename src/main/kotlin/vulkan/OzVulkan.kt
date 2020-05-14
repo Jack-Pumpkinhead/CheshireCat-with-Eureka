@@ -1,23 +1,26 @@
 package vulkan
 
-import com.google.common.graph.GraphBuilder
-import com.google.common.graph.MutableGraph
-import com.google.common.graph.Traverser
 import game.main.AfterSwapchainRecreated
-import game.main.CleanUpMethod
 import game.main.Univ
 import game.window.OzWindow
 import glm_.vec2.Vec2i
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.joinAll
-import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
-import vkk.entities.VkBuffer
+import org.springframework.beans.factory.getBean
+import org.springframework.context.support.GenericApplicationContext
+import org.springframework.context.support.beans
+import vkk.entities.VkSwapchainKHR
 import vkk.vk10.structs.Extent2D
-import vulkan.command.OzCB
-import vulkan.drawing.OzUniformBuffer
-import vulkan.drawing.OzVMA
+import vulkan.command.CopyBuffer
+import vulkan.buffer.OzVMA
+import vulkan.drawing.DrawImage
+import vulkan.drawing.OzObjects
 import vulkan.pipelines.*
+import vulkan.pipelines.layout.OzDescriptorSetLayouts
+import vulkan.pipelines.layout.OzUniformMatrixDynamic
+import vulkan.pipelines.layout.OzPipelineLayouts
+import vulkan.pipelines.vertexInput.OzVertexInputs
 import vulkan.util.LoaderGLSL
 import vulkan.util.SurfaceSwapchainSupport
 
@@ -25,147 +28,137 @@ import vulkan.util.SurfaceSwapchainSupport
  * Created by CowardlyLion on 2020/4/20 13:00
  */
 class OzVulkan(val univ: Univ, val window: OzWindow) {
-    val logger = KotlinLogging.logger {  }
-    val cleanups: MutableGraph<CleanUpMethod> = GraphBuilder.directed().allowsSelfLoops(false).build<CleanUpMethod>()
-    val instance = OzInstance(this)
-    val surface = OzSurface(this, instance, window)
-    var physicalDevice = OzPhysicalDevice(this, instance, instance.physicalDevices[0])
-    var surfaceSupport = SurfaceSwapchainSupport(physicalDevice, surface.surface)
 
-    init {
-        var i = 1
-        while (!(physicalDevice.supported() && surfaceSupport.supported()) && i < instance.physicalDevices.size) {
-            physicalDevice = OzPhysicalDevice(this, instance, instance.physicalDevices[i])
-            surfaceSupport = SurfaceSwapchainSupport(physicalDevice, surface.surface)
-            i++
-        }
-        if (!(physicalDevice.supported() && surfaceSupport.supported())) {
-            logger.warn { "No suitable physical device found." }
-        }
-        logger.info {
-            "use pd: ${physicalDevice.pd.address()}"
-        }
+    companion object {
+
+        val logger = KotlinLogging.logger {  }
+
     }
 
-    val device = OzDevice(this, physicalDevice, surfaceSupport)
+    val context = GenericApplicationContext()
 
-    val commandPool = OzCommandPools(this, device, surfaceSupport)
+    init {
+        //default name / destroyMethodName
+        val mainBeans = beans {
+            bean<OzWindow>{ window}
+            bean<OzInstance>(destroyMethodName = "destroy")
+            bean<OzSurface>(destroyMethodName = "destroy")
+            bean<OzPhysicalDevices>()
+            bean() { ref<OzPhysicalDevices>().physicalDevice }
+            bean() { ref<OzPhysicalDevices>().surfaceSupport }
+            bean<OzDevice>(destroyMethodName = "destroy")
+            bean<OzQueues>(destroyMethodName = "destroy")
+            bean<OzCommandPools>(destroyMethodName = "destroy")
+            bean<CopyBuffer>()
 
-    val cb = OzCB(this, commandPool, device)
-
-    val shadermodule = OzShaderModule(this, device)
-
-    val descriptorPool = OzDescriptorPool(this, device, 3)
-
-
-
-
-
-    val vma = OzVMA(this, physicalDevice, device)
-
-
-
-    var swapchain = OzSwapchain(this, surfaceSupport, device, window.framebufferSize)
-
-    var imageViews = OzImageViews(this, device, swapchain)
-
-    var renderpass = OzRenderPass(this, device, surfaceSupport.surfaceFormat.format)
-
-    val graphicPipelines = OzGraphicPipelines(this, device, shadermodule, renderpass, Extent2D(window.framebufferSize))
-
-    var framebuffer = OzFramebuffers(this, device, renderpass, imageViews, Extent2D(window.framebufferSize))
+            bean<OzVMA>(destroyMethodName = "destroy")
 
 
-//    var commandBuffers = OzCommandBuffers(this, device, commandPool, framebuffer, swapchain, pipeline, renderpass)
 
-    val uniformBuffer = OzUniformBuffer(this, device, vma, 3)
 
-    val descriptorSets = OzDescriptorSets(
-        this,
-        device,
-        descriptorPool,
-        graphicPipelines.hellomvp,
-        3,
-        uniformBuffer.buffers.map { VkBuffer(it.pBuffer) },
-        4 * 4 * 3 * Long.SIZE_BYTES
-    )
 
+
+        }
+        val pipelineBeans = beans() {
+            bean<OzShaderModules>(destroyMethodName = "destroy")
+            bean<OzVertexInputs>()
+            bean<OzDescriptorSetLayouts>(destroyMethodName = "destroy")
+            bean<OzDescriptorPools>(destroyMethodName = "destroy")
+            bean<OzPipelineLayouts>(destroyMethodName = "destroy")
+
+            bean<OzUniformMatrixDynamic>(destroyMethodName = "destroy")
+
+        }
+        val extraBeans = beans() {
+            bean<OzObjects>()
+
+        }
+        mainBeans.initialize(context)
+        pipelineBeans.initialize(context)
+        extraBeans.initialize(context)
+        context.refresh()
+
+
+
+    }
+
+
+    var swapchainContext = GenericApplicationContext(context)
+
+    var oldSwapchain: VkSwapchainKHR = VkSwapchainKHR.NULL
+
+    val swapchainBeans = beans {
+        bean<Extent2D> { Extent2D(ref<OzWindow>().framebufferSize) }
+        bean<OzSwapchain>(destroyMethodName = "destroy") { OzSwapchain(ref(), ref(), ref(), oldSwapchain) }
+        bean<OzRenderPass>(destroyMethodName = "destroy") {
+            OzRenderPass(ref(), ref<SurfaceSwapchainSupport>().surfaceFormat.format)
+        }
+        bean<OzImageViews>(destroyMethodName = "destroy")
+
+        bean<OzGraphicPipelines>(destroyMethodName = "destroy")
+        bean<OzFramebuffers>(destroyMethodName = "destroy")
+
+        bean<DrawImage>(destroyMethodName = "destroy")
+
+    }
+
+    init {
+        swapchainBeans.initialize(swapchainContext)
+        swapchainContext.refresh()
+        oldSwapchain = swapchainContext.getBean<OzSwapchain>().swapchain
+    }
+
+    fun recreateSwapchainContext() {
+        val swapchainContext_ = GenericApplicationContext(context)
+        swapchainBeans.initialize(swapchainContext_)
+        swapchainContext_.refresh()
+        swapchainContext.close()
+        swapchainContext = swapchainContext_
+        oldSwapchain = swapchainContext.getBean<OzSwapchain>().swapchain
+    }
 
 
 
 
     var shouldRecreate = false
 
-    fun recreateRenderpass(windowSize: Vec2i) {
+    suspend fun recreateSwapchain(windowSize: Vec2i) {
         val job = Job()
-        val cps = runBlocking {
-            commandPool.onRecreateRenderpass(job)
-        }
-        val qs = runBlocking {
-            device.onRecreateRenderpass(job)
-        }
-        val fbs = runBlocking {
-            framebuffer.onRecreateRenderpass(job)
-        }
-        runBlocking {
-            cps.map { it.first }.joinAll()
-        }
 
 
+//        val cps = swapchainContext.getBean<OzCommandPools>().onRecreateSwapchain(job)
+//        val qs = swapchainContext.getBean<OzDescriptorPools>().onRecreateSwapchain(job)
+//        val fbs = swapchainContext.getBean<OzQueues>().onRecreateRenderpass(job)
+        val cps = swapchainContext.getBean<OzCommandPools>().cps.map { it.waitComplete() }
+        val qs = swapchainContext.getBean<OzDescriptorPools>().pools.map { it.waitComplete() }
+        val fbs = swapchainContext.getBean<OzQueues>().qs.map { it.waitComplete() }
+        cps.joinAll()
+        qs.joinAll()
+        fbs.joinAll()
 
-        val newSwapchain = OzSwapchain(this, surfaceSupport, device, windowSize, swapchain.swapchain)
+        swapchainContext.getBean<OzDevice>().device.waitIdle()
 
-        device.device.waitIdle()
 
-        graphicPipelines.recreate(Extent2D(windowSize))
+        recreateSwapchainContext()
 
-        framebuffer.fbs.forEach {
-            cleanup(it::destroy)
-        }
-//        cleanup(renderpass::destroy)
-        cleanup(imageViews::destroy)
-        cleanup(swapchain::destroy)
+        job.complete()  //trigger waiting coroutine //nothing to trigger now
 
-        swapchain = newSwapchain
 
-        imageViews = OzImageViews(this, device, swapchain)//
-
-//        renderpass = OzRenderPass(this, device, swapchain)
-
-        framebuffer = OzFramebuffers(this, device, renderpass, imageViews, Extent2D(windowSize))//
-
-        job.complete()  //trigger waiting coroutine
-
-        runBlocking {
-            cps.map { it.second }.joinAll()
-            qs.joinAll()
-            fbs.joinAll()
-        }
-
-        //TODO: poll event to drawable things
-
-        after.forEach {
-            it.invoke()
+//        afterSwapchainRecreateEvent.forEach {
+//            it.invoke()
+//        }
+        swapchainContext.getBean<OzObjects>().getObjects().forEach {
+            it.data.afterSwapchainRecreated()
         }
 
     }
 
-    val after = mutableListOf<AfterSwapchainRecreated>()
-
-
-    fun cleanup(c: CleanUpMethod) {
-        if (cleanups.nodes().contains(c)) {
-            val unders = mutableSetOf<CleanUpMethod>()
-            Traverser.forGraph(cleanups).depthFirstPostOrder(c).forEach { it.invoke(); unders += it }
-            unders.forEach{ cleanups.removeNode(it)}
-        }
-    }
+//    val afterSwapchainRecreateEvent = mutableListOf<AfterSwapchainRecreated>()
 
     fun destroy() {
-        device.device.waitIdle()
-        while (cleanups.nodes().isNotEmpty()) {
-            cleanup(cleanups.nodes().first())
-        }
+        swapchainContext.getBean<OzDevice>().device.waitIdle()
+        swapchainContext.close()
+        context.close()
         LoaderGLSL.destroy()
     }
 
@@ -173,8 +166,8 @@ class OzVulkan(val univ: Univ, val window: OzWindow) {
 //        VmaAllocationCreateInfo
 //        Vma.
 //        Vma.vmaCreateBuffer()
-        logger.info {
-            "maxMemoryAllocationCount: ${physicalDevice.properties.limits.maxMemoryAllocationCount}"
-        }
+//        logger.info {
+//            "maxMemoryAllocationCount: ${physicalDevice.properties.limits.maxMemoryAllocationCount}"
+//        }
     }
 }

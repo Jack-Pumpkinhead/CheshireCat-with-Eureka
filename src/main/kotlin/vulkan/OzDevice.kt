@@ -3,126 +3,82 @@ package vulkan
 import com.google.common.collect.TreeMultiset
 import game.main.OzConstants.Extensions
 import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.sync.Mutex
-import mu.KotlinLogging
+import vkk.VkCommandPoolCreate
 import vkk.VkFenceCreate
 import vkk.VkFenceCreateFlags
-import vkk.entities.VkFence
 import vkk.entities.VkSemaphore
 import vkk.identifiers.Queue
 import vkk.vk10.*
+import vkk.vk10.structs.CommandPoolCreateInfo
 import vkk.vk10.structs.DeviceCreateInfo
 import vkk.vk10.structs.DeviceQueueCreateInfo
 import vkk.vk10.structs.FenceCreateInfo
+import vulkan.concurrent.OzCommandPool
 import vulkan.concurrent.OzQueue
 import vulkan.util.SurfaceSwapchainSupport
 
 class OzDevice(
-    val ozVulkan: OzVulkan,
-    val ozPhysicalDevice: OzPhysicalDevice,
+    val physicalDevice: OzPhysicalDevice,
     val surfaceSupport: SurfaceSwapchainSupport
 ) {
 
-    val logger = KotlinLogging.logger { }
+    val multiset = TreeMultiset.create<Int>()
 
-    val graphicI = 0
-    val presentI: Int
-    val transferI: Int
-    val queueCIs: List<DeviceQueueCreateInfo>
-    init {
+    fun nextQueue(queueFamily: Int): Pair<Int, Int> {
+        val queueIndex = multiset.count(queueFamily) % physicalDevice.queueFamilyProperties[queueFamily].queueCount
+        multiset += queueFamily
+        return queueFamily to queueIndex
+    }
 
-        val set = TreeMultiset.create<Int>()
-        set.add(surfaceSupport.queuefamily_graphic)
+    val graphicI = nextQueue(surfaceSupport.queuefamily_graphic)
+    val presentI = nextQueue(surfaceSupport.queuefamily_present)
+    val transferI = nextQueue(surfaceSupport.queuefamily_transfer)
 
-        presentI =  //temporary solution
-            set.count(surfaceSupport.queuefamily_present) % ozPhysicalDevice.queueFamilyProperties[surfaceSupport.queuefamily_present].queueCount
-        set.add(surfaceSupport.queuefamily_present)
+    val queueIs = listOf(
+        graphicI,
+        presentI,
+        transferI
+    )
 
-        transferI = set.count(surfaceSupport.queuefamily_transfer) % ozPhysicalDevice.queueFamilyProperties[surfaceSupport.queuefamily_transfer].queueCount
-        set.add(surfaceSupport.queuefamily_graphic)
-
-        val q = mutableListOf<DeviceQueueCreateInfo>()
-        set.forEachEntry { index, count ->
-            q += DeviceQueueCreateInfo(
-                queueFamilyIndex = index,
-                queuePriorities = FloatArray(count) { 0.5f }) //Specify the number of queues in this queueFamilyIndex to create. will work even slightly larger than queueFamProp[0].queueCount
-        }
-        queueCIs = q.toList()
+    val queueCIs: List<DeviceQueueCreateInfo> = multiset.entrySet().map {
+        DeviceQueueCreateInfo(
+            queueFamilyIndex = it.element,
+            queuePriorities = FloatArray(it.count) { 0.5f }) //Specify the number of queues in this queueFamilyIndex to create. will work even slightly larger than queueFamProp[0].queueCount
     }
 
     val deviceCI = DeviceCreateInfo(
         queueCreateInfos = queueCIs,
         enabledExtensionNames = Extensions,
-        enabledFeatures = ozPhysicalDevice.features
+        enabledFeatures = physicalDevice.features
     )
-    val device = ozPhysicalDevice.pd.createDevice(deviceCI)
 
-    val graphicsQueue : Queue = device.getQueue(surfaceSupport.queuefamily_graphic,queueIndex = graphicI)
-    val presentQueue: Queue = device.getQueue(surfaceSupport.queuefamily_present,queueIndex = presentI)
-    val transferQueue: Queue = device.getQueue(surfaceSupport.queuefamily_transfer, queueIndex = transferI)
+    val device = physicalDevice.pd.createDevice(deviceCI)
 
-//    val mts = mapOf<Pair<Int, Int>, Mutex>()
-//    val fences = mapOf<Pair<Int, Int>, VkFence>()
+    val scope = CoroutineScope(Dispatchers.Default)//scope before queueMap
 
-    //temp solution, may support more queue
-    //kotlin coroutine: select on send
-//    fun graphicsMT() = mts.getOrDefault(surfaceSupport.queuefamily_graphic to graphicI, Mutex())
-//    fun presentMT() = mts.getOrDefault(surfaceSupport.queuefamily_present to presentI, Mutex())
-//    fun transferMT() = mts.getOrDefault(surfaceSupport.queuefamily_transfer to transferI, Mutex())
+    //prevent duplicate queue
+    val queueMap = mutableMapOf<Pair<Int, Int>, OzQueue>()
+
+    init {
+        queueIs.forEach {
+            queueMap.putIfAbsent(it, OzQueue(this, device.getQueue(it.first, it.second)))
+        }
+    }
+
 
     fun semaphore(): VkSemaphore = device.createSemaphore()
     fun signaledFence(flag: VkFenceCreateFlags = VkFenceCreate.SIGNALED_BIT.i) = device.createFence(FenceCreateInfo(flag))
 
 
-//    fun graphicsFence() = fences.getOrDefault(surfaceSupport.queuefamily_graphic to graphicI, signaledFence())
-//    fun presentFence()  = fences.getOrDefault(surfaceSupport.queuefamily_present to presentI, signaledFence())
-//    fun transferFence() = fences.getOrDefault(surfaceSupport.queuefamily_transfer to transferI, signaledFence())
-
-//    val queueActions = Channel<(Queue) -> Unit>()
 
 
-    init {
-//        graphicsQueue
-//        device.withFence {
-//
-//        }
-//        device.getFenceStatus(
-//        graphicsFence())
-//        queueActions.re
-    }
-
-    val scope = CoroutineScope(Dispatchers.Default)
-//    val scope = CoroutineScope(newSingleThreadContext("device"))
-
-    //make sure queues are different
-    val graphicQ  =
-        OzQueue(ozVulkan, this, surfaceSupport.queuefamily_graphic, graphicI)
-    val presentQ  =
-        OzQueue(ozVulkan, this, surfaceSupport.queuefamily_present, presentI)
-    val transferQ =
-        OzQueue(ozVulkan, this, surfaceSupport.queuefamily_transfer, transferI)
-
-    suspend fun onRecreateRenderpass(job: CompletableJob):List<Job> {
-        transferQ.wait(job)
-        return listOf(
-            graphicQ.wait_clear(job),
-            presentQ.wait_clear(job)
-        )
-    }
-
-
-
-
-    init {
-        ozVulkan.cleanups.addNode(this::destroy)
-        ozVulkan.cleanups.putEdge(ozPhysicalDevice.ozInstance::destroy, this::destroy)
-    }
 
     fun destroy() {
-
         device.waitIdle()
         device.destroy()
+        OzVulkan.logger.info {
+            "${javaClass.name} destroyed"
+        }
     }
 
 

@@ -1,51 +1,36 @@
 package vulkan.pipelines
 
 import glm_.vec4.Vec4
-import mu.KotlinLogging
 import vkk.*
 import vkk.entities.*
-import vkk.vk10.createDescriptorSetLayout
 import vkk.vk10.createGraphicsPipeline
-import vkk.vk10.createPipelineLayout
 import vkk.vk10.structs.*
-import vkk.vk11.structs.DescriptorSetLayoutSupport
 import vulkan.OzDevice
 import vulkan.OzRenderPass
 import vulkan.OzVulkan
-import vulkan.pipelines.vertexInput.OzVertexInput33
+import vulkan.pipelines.layout.OzPipelineLayouts
+import vulkan.pipelines.vertexInput.OzVertexInputs
 
 /**
  * Created by CowardlyLion on 2020/5/2 22:57
  */
 class OzGPUniform(
-    val ozVulkan: OzVulkan,
     val device: OzDevice,
-    val shadermodule: OzShaderModule,
-    val renderPass: OzRenderPass,
+    shadermodule: OzShaderModules,
+    vertexInputs: OzVertexInputs,
+    pipelineLayouts: OzPipelineLayouts,
+    renderPass: OzRenderPass,
+    subpass: Int = 0,
     extent2D: Extent2D
 ){
 
-    companion object {
-
-        val logger = KotlinLogging.logger { }
-
-    }
-
-    val descriptorSetLayout: VkDescriptorSetLayout
-    val pipelineLayout: VkPipelineLayout
     val graphicsPipeline: VkPipeline
+
     init {
 
         val shaderstageCI_vert = shadermodule.getPipelineShaderStageCI("hellomvp.vert")
         val shaderstageCI_frag = shadermodule.getPipelineShaderStageCI("basic.frag")
 
-
-        val temp = OzVertexInput33()
-
-        val vertexInputStateCI = PipelineVertexInputStateCreateInfo(
-            vertexBindingDescriptions = arrayOf(temp.bindingDescription),
-            vertexAttributeDescriptions = arrayOf(temp.posAD, temp.colorAD)
-        )
 
         val inputAssemblyStateCI = PipelineInputAssemblyStateCreateInfo(
             topology = VkPrimitiveTopology.TRIANGLE_LIST,
@@ -112,34 +97,9 @@ class OzGPUniform(
         )
 
 
-
-        val descriptorSetLayoutBinding = DescriptorSetLayoutBinding(
-            binding = 0,
-            descriptorType = VkDescriptorType.UNIFORM_BUFFER,
-            descriptorCount = 1, //use for uniform array in glsl
-            stageFlags = VkShaderStage.VERTEX_BIT.i,
-            immutableSamplers = null
-        )
-        descriptorSetLayout = device.device.createDescriptorSetLayout(
-            DescriptorSetLayoutCreateInfo(
-                flags = VkDescriptorSetLayoutCreate(0).i,
-                bindings = arrayOf(descriptorSetLayoutBinding)
-            )
-        )
-
-        pipelineLayout = device.device.createPipelineLayout(
-            createInfo = PipelineLayoutCreateInfo(
-                setLayouts = VkDescriptorSetLayout_Array(1){ descriptorSetLayout},
-                pushConstantRanges = null
-            )
-        )
-        assert(descriptorSetLayout.isValid)
-        assert(pipelineLayout.isValid)
-
-
         val graphicsPipelineCI = GraphicsPipelineCreateInfo(
             stages = arrayOf(shaderstageCI_vert, shaderstageCI_frag),
-            vertexInputState = vertexInputStateCI,
+            vertexInputState = vertexInputs.p3c3.inputState,
             inputAssemblyState = inputAssemblyStateCI,
             viewportState = viewportSCI,
             rasterizationState = rasterizationSCI,
@@ -147,9 +107,9 @@ class OzGPUniform(
             depthStencilState = null,
             colorBlendState = colorBlendSCI,
             dynamicState = null,
-            layout = pipelineLayout,
+            layout = pipelineLayouts.uniformSingle,
             renderPass = renderPass.renderpass,
-            subpass = 0,
+            subpass = subpass,
             basePipelineHandle = VkPipeline.NULL,
             basePipelineIndex = -1
         )
@@ -162,18 +122,10 @@ class OzGPUniform(
     }
 
 
-    init {
-        ozVulkan.cleanups.addNode(this::destroy)
-        ozVulkan.cleanups.putEdge(renderPass::destroy, this::destroy)
-    }
 
     fun destroy() {
         device.device.destroy(graphicsPipeline)
-        device.device.destroy(pipelineLayout)
-        device.device.destroyDescriptorSetLayout(descriptorSetLayout)
-        //These things can be reused
-        
-        logger.debug {
+        OzVulkan.logger.debug {
             "pipeline 'hellomvp' destroyed"
         }
     }

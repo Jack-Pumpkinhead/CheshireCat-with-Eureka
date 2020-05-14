@@ -6,15 +6,8 @@ import game.loop.TPSActor.Companion.record
 import game.main.Univ
 import game.window.OzWindow
 import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.BroadcastChannel
-import kotlinx.coroutines.channels.Channel
 import mu.KotlinLogging
 import uno.glfw.glfw
-import vkk.VkResult
-import vkk.entities.VkFence
-import vkk.extensions.acquireNextImageKHR
-import vkk.vk
-import vulkan.concurrent.OzQueue
 import vulkan.drawing.Drawing
 
 class FrameLoop(val univ: Univ, val window: OzWindow) {
@@ -50,7 +43,9 @@ class FrameLoop(val univ: Univ, val window: OzWindow) {
 
 
             if (window.resized || univ.vulkan.shouldRecreate) {
-                univ.vulkan.recreateRenderpass(window.framebufferSize)
+                runBlocking {
+                    univ.vulkan.recreateSwapchain(window.framebufferSize)
+                }
             }
 
             val tick = runBlocking { fps.getTotal() }
@@ -58,6 +53,7 @@ class FrameLoop(val univ: Univ, val window: OzWindow) {
 
 //            listeners.forEach { it.update(tick) }
 //            drawframe.draw()
+
 
             drawing.draw()
 
@@ -76,7 +72,8 @@ class FrameLoop(val univ: Univ, val window: OzWindow) {
         }
     }
 
-    val drawing = Drawing(univ.vulkan, univ.vulkan.device, this)
+    val drawing = Drawing(univ.vulkan, this)
+
 
     //use while(window.isActive) would throw exception at close
     suspend fun printFPS() {
@@ -92,9 +89,9 @@ class FrameLoop(val univ: Univ, val window: OzWindow) {
         logger.info {
             "surface size: ${univ.vulkan.physicalDevice.pd.getSurfaceCapabilitiesKHR(univ.vulkan.surface.surface).currentExtent.size}"
         }*/
-        logger.info {
+        /*logger.info {
             "cmds: ${univ.vulkan.framebuffer.fbs[0].drawCmds.size}"
-        }
+        }*/
     }
 
 }

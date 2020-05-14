@@ -1,6 +1,5 @@
 package vulkan
 
-import game.main.OzConstants
 import game.main.OzConstants.InstanceExtensions
 import game.main.OzConstants.Layers
 import mu.KotlinLogging

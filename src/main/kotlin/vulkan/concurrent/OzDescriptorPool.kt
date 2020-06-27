@@ -1,16 +1,9 @@
 package vulkan.concurrent
 
-import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.CompletableJob
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.actor
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.selects.select
-import vkk.entities.VkDescriptorPool
-import vkk.entities.VkDescriptorSetLayout_Array
-import vkk.entities.VkDescriptorSet_Array
-import vkk.identifiers.CommandBuffer
+import vkk.entities.*
 import vkk.vk10.*
 import vkk.vk10.structs.DescriptorSetAllocateInfo
 import vulkan.OzDevice
@@ -23,11 +16,17 @@ class OzDescriptorPool(val device: OzDevice,val  descriptorPool: VkDescriptorPoo
 
     sealed class Action {
 
+        class AllocateDS(
+            val setLayout: VkDescriptorSetLayout,
+            val resp: CompletableDeferred<VkDescriptorSet>
+        ) : Action()
         class AllocateDSs(
             val setLayouts: VkDescriptorSetLayout_Array,
             val resp: CompletableDeferred<VkDescriptorSet_Array>
         ) : Action()
 
+
+        class FreeDS(val descriptorSet: VkDescriptorSet, val resp: CompletableJob) : Action()
         class FreeDSs(val descriptorSets: VkDescriptorSet_Array, val resp: CompletableJob) : Action()
         class Reset(val resp: CompletableJob) : Action()
 
@@ -40,12 +39,31 @@ class OzDescriptorPool(val device: OzDevice,val  descriptorPool: VkDescriptorPoo
         actor.send(Action.AllocateDSs(setLayouts, resp))
         return resp
     }
-
-    suspend fun free(descriptorSets: VkDescriptorSet_Array): Job {
-        val resp = Job()
-        actor.send(Action.FreeDSs(descriptorSets, resp))
+    suspend fun allocate(setLayouts: VkDescriptorSetLayout): CompletableDeferred<VkDescriptorSet> {
+        val resp = CompletableDeferred<VkDescriptorSet>()
+        actor.send(Action.AllocateDS(setLayouts, resp))
         return resp
     }
+    fun allocate_im(setLayouts: VkDescriptorSetLayout): VkDescriptorSet {
+        val resp = CompletableDeferred<VkDescriptorSet>()
+        return runBlocking {
+            actor.send(Action.AllocateDS(setLayouts, resp))
+            return@runBlocking resp.await()
+        }
+    }
+
+
+    suspend fun free(sets: VkDescriptorSet_Array): Job {
+        val resp = Job()
+        actor.send(Action.FreeDSs(sets, resp))
+        return resp
+    }
+    suspend fun free(set: VkDescriptorSet): Job {
+        val resp = Job()
+        actor.send(Action.FreeDS(set, resp))
+        return resp
+    }
+
     suspend fun reset(): Job {
         val resp = Job()
         actor.send(Action.Reset(resp))
@@ -104,9 +122,23 @@ class OzDescriptorPool(val device: OzDevice,val  descriptorPool: VkDescriptorPoo
                                 )
                             )
                         )
+                        is Action.AllocateDS -> msg.resp.complete(
+                            device.device.allocateDescriptorSet(
+                                DescriptorSetAllocateInfo(
+                                    descriptorPool = descriptorPool,
+                                    setLayouts = VkDescriptorSetLayout_Array(1) { msg.setLayout }
+                                )
+                            )
+                        )
                         is Action.FreeDSs -> {
                             device.device.freeDescriptorSets(
                                 descriptorPool, msg.descriptorSets
+                            )
+                            msg.resp.complete()
+                        }
+                        is Action.FreeDS -> {
+                            device.device.freeDescriptorSets(
+                                descriptorPool, msg.descriptorSet
                             )
                             msg.resp.complete()
                         }

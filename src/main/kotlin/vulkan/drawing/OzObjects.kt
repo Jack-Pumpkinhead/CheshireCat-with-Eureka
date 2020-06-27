@@ -2,7 +2,7 @@ package vulkan.drawing
 
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import vulkan.pipelines.layout.OzUniformMatrixDynamic
+import vulkan.pipelines.pipelineLayout.OzUniformMatrixDynamic
 
 /**
  * Created by CowardlyLion on 2020/5/12 19:52

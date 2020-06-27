@@ -2,13 +2,14 @@ package game.loop
 
 class TPSCounter() {
 
-    val timeStamp = mutableListOf<Long>()
+    private val timeStamp = mutableListOf<Long>()
     var counter: Long = 0
         private set
 
-    fun record() {
+    fun record(): Long {
         timeStamp.add(System.currentTimeMillis())
         counter++
+        return counter
     }
 
     fun getTPS(): Int {

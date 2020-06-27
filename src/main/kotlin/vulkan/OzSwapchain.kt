@@ -2,23 +2,33 @@ package vulkan
 
 import vkk.VkImageUsage
 import vkk.VkSharingMode
+import vkk.entities.VkImage
+import vkk.entities.VkImageView
 import vkk.entities.VkSwapchainKHR
 import vkk.extensions.*
 import vkk.vk10.structs.Extent2D
-import vulkan.concurrent.OzImage
+import vulkan.buffer.OzVMA
+import vulkan.concurrent.DrawCmds_old
+import vulkan.image.DepthImage
 import vulkan.util.SurfaceSwapchainSupport
 
 class OzSwapchain(
     val device: OzDevice,
     sss: SurfaceSwapchainSupport,
     extent2D: Extent2D,
-    oldSwapchain: VkSwapchainKHR
+    oldSwapchain: VkSwapchainKHR,
+    vma: OzVMA,
+    commandPools: OzCommandPools,
+    queues: OzQueues,
+    ozImageViews: OzImageViews
 ) {
+
+    val format = sss.surfaceFormat.format
 
     val swapchainCIKHR: SwapchainCreateInfoKHR = SwapchainCreateInfoKHR(
         surface = sss.surface,
         minImageCount = sss.imageCount,
-        imageFormat = sss.surfaceFormat.format,
+        imageFormat = format,
         imageColorSpace = sss.surfaceFormat.colorSpace,
         imageExtent = extent2D,
         imageArrayLayers = 1,
@@ -38,11 +48,17 @@ class OzSwapchain(
     val swapchain: VkSwapchainKHR = device.device.createSwapchainKHR(swapchainCIKHR)
 
 
-    val images: List<OzImage>
+    val images: List<VkImage>
+    val drawCmds: List<DrawCmds_old>
+    val imageViews: List<VkImageView>
+    val depth: List<DepthImage>
 
     init {
         val imagesArray = device.device.getSwapchainImagesKHR(swapchain)
-        images = List(imagesArray.size) { OzImage(imagesArray[it]) }
+        images = List(imagesArray.size) { imagesArray[it] }
+        drawCmds = List(imagesArray.size) { DrawCmds_old(imagesArray[it]) }
+        imageViews = images.map { ozImageViews.createColor(it, format) }
+        depth = List(images.size){ DepthImage(vma, device, commandPools, queues, extent2D, ozImageViews) }
     }
 
 
@@ -50,7 +66,14 @@ class OzSwapchain(
 
 
     fun destroy() {
+        depth.forEach {
+            it.destroy()
+        }
+        imageViews.forEach {
+            device.device.destroy(it)
+        }
         device.device.destroy(swapchain)
+
         OzVulkan.logger.info {
             "swapchain destroyed"
         }

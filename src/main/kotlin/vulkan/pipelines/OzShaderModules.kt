@@ -1,5 +1,6 @@
 package vulkan.pipelines
 
+import game.input.GLSLoader
 import vkk.VkShaderStage
 import vkk.entities.VkShaderModule
 import vkk.vk10.createShaderModule
@@ -12,13 +13,13 @@ import vulkan.util.LoaderGLSL
 /**
  * Created by CowardlyLion on 2020/5/2 20:42
  */
-class OzShaderModules(val device: OzDevice) {
+class OzShaderModules(val device: OzDevice, val glsl: GLSLoader) {
 
     val map = hashMapOf<String, VkShaderModule>()
 
     fun get(path: String): VkShaderModule = map.computeIfAbsent(path) {
         device.device.createShaderModule(
-            ShaderModuleCreateInfo(code = LoaderGLSL.ofGLSL(path))
+            ShaderModuleCreateInfo(code = glsl.ofGLSL(path))
         )
     }
 
@@ -26,6 +27,7 @@ class OzShaderModules(val device: OzDevice) {
      * @param stage fill in manually if can't resolve suffix of path
      * */
     fun getPipelineShaderStageCI(path: String, stage: VkShaderStage = VkShaderStage.ALL): PipelineShaderStageCreateInfo {
+//        OzVulkan.logger.info { path }
         return PipelineShaderStageCreateInfo(
             stage = shaderStageOf(path, stage),
             module = get(path),

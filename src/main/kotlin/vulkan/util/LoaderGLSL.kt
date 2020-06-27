@@ -1,9 +1,8 @@
 package vulkan.util
 
-import game.input.LoaderFile
+import game.input.LoadFile
 import graphics.scenery.spirvcrossj.*
 import kool.ByteBuffer
-import mu.KotlinLogging
 import java.nio.ByteBuffer
 
 class LoaderGLSL private constructor() {
@@ -18,7 +17,7 @@ class LoaderGLSL private constructor() {
         fun ofVert(name: String) = getBuffer(name, EShLanguage.EShLangVertex)
         fun ofFrag(name: String) = getBuffer(name, EShLanguage.EShLangFragment)
 
-        fun ofGLSL(path: String) = getBuffer(LoaderFile.ofString("shaders\\glsl\\$path"), stageOf(path))
+        fun ofGLSL(path: String) = getBuffer(LoadFile.ofString("shaders\\glsl\\$path"), stageOf(path))
 
         /**
          * @param stage fill in manually if don't follow default file naming convention

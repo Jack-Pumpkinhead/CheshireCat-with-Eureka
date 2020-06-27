@@ -10,11 +10,11 @@ import vulkan.buffer.OzVMA
 import vulkan.OzFramebuffers
 import vulkan.OzSwapchain
 import vulkan.OzVulkan
+import vulkan.buffer.VmaBuffer
 import vulkan.command.CopyBuffer
 import vulkan.command.DrawCmd
 import vulkan.pipelines.OzGraphicPipelines
-import vulkan.pipelines.layout.OzUniformMatrixDynamic
-import vulkan.pipelines.layout.OzPipelineLayouts
+import vulkan.pipelines.pipelineLayout.OzUniformMatrixDynamic
 
 class OzVertexDataImmutable(
     vma: OzVMA,
@@ -36,8 +36,8 @@ class OzVertexDataImmutable(
     val ibytes = indices.size * Int.BYTES
 
 
-    val vertexBuffer_device_local: VMABuffer
-    val indexBuffer_device_local: VMABuffer
+    val vertexBuffer_device_local: VmaBuffer
+    val indexBuffer_device_local: VmaBuffer
 
     var drawCmd: List<CommandBuffer>
 
@@ -49,14 +49,14 @@ class OzVertexDataImmutable(
 //            "v: ${vertices.rem}  remsize: ${vertices.remSize}\t i: ${indices.rem}  remsize: ${indices.remSize}\t "
 //        }
 
-        val vertexBuffer = vma.of_staging_vertex(vbytes)
-        val indexBuffer = vma.of_staging_index(ibytes)
+        val vertexBuffer = vma.createBuffer_vertexStaging(vbytes)
+        val indexBuffer = vma.createBuffer_indexStaging(ibytes)
 
         Stack {
-            vertexBuffer.fill(
+            vertexBuffer.memory.fill(
                 it.mallocFloat(vertices.size).put(vertices).flip()
             )
-            indexBuffer.fill(
+            indexBuffer.memory.fill(
                 it.mallocInt(indices.size).put(indices).flip()
             )
         }
@@ -83,7 +83,7 @@ class OzVertexDataImmutable(
     suspend fun getCmd(): List<CommandBuffer> {
         //need to reload framebuffers!
 
-        return framebuffers.fbs.mapIndexed { index, framebuffer ->
+        return framebuffers.fb_simple.mapIndexed { index, framebuffer ->
             val cb = commandPools.graphicCP.allocate().await()
 
             /*it.recordDraw(
@@ -112,12 +112,12 @@ class OzVertexDataImmutable(
     }
 
     suspend fun register() {
-        swapchain.images.forEachIndexed { index, image ->
+        swapchain.drawCmds.forEachIndexed { index, image ->
             image.add(drawCmd[index])
         }
     }
     suspend fun unregister() {
-        swapchain.images.forEachIndexed { index, image ->
+        swapchain.drawCmds.forEachIndexed { index, image ->
             image.remove(drawCmd[index])
         }
     }

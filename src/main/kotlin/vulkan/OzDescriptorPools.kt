@@ -29,9 +29,13 @@ class OzDescriptorPools(val device: OzDevice, surfaceSupport: SurfaceSwapchainSu
                     DescriptorPoolSize(
                         type = VkDescriptorType.UNIFORM_BUFFER_DYNAMIC,
                         descriptorCount = surfaceSupport.imageCount
+                    ),
+                    DescriptorPoolSize(
+                        type = VkDescriptorType.COMBINED_IMAGE_SAMPLER,
+                        descriptorCount = surfaceSupport.imageCount
                     )
                 ),
-                maxSets = surfaceSupport.imageCount * 1 + 1
+                maxSets = surfaceSupport.imageCount * 3 + 1
             )
         )
         pool = OzDescriptorPool(device, descriptorPool)

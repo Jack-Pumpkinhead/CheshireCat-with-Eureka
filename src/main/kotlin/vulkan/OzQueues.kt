@@ -11,10 +11,11 @@ class OzQueues(val device: OzDevice) {
 
     //make sure queues are different
     val graphicQ: OzQueue = device.queueMap[device.graphicI]!!
+    val graphicQ_2: OzQueue = device.queueMap[device.graphicI_2]!!
     val presentQ = device.queueMap[device.presentI]!!
     val transferQ = device.queueMap[device.transferI]!!
 
-    val qs = listOf(graphicQ, presentQ, transferQ)
+    val qs = listOf(graphicQ, graphicQ_2, presentQ, transferQ)
 
     suspend fun onRecreateRenderpass(job: CompletableJob):List<Job> {
         return device.queueMap.values.map {

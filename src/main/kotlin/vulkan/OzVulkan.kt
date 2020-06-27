@@ -1,6 +1,5 @@
 package vulkan
 
-import game.main.AfterSwapchainRecreated
 import game.main.Univ
 import game.window.OzWindow
 import glm_.vec2.Vec2i
@@ -14,13 +13,15 @@ import vkk.entities.VkSwapchainKHR
 import vkk.vk10.structs.Extent2D
 import vulkan.command.CopyBuffer
 import vulkan.buffer.OzVMA
+import vulkan.command.DrawCmd
 import vulkan.drawing.DrawImage
 import vulkan.drawing.OzObjects
+import vulkan.image.OzImages
 import vulkan.pipelines.*
-import vulkan.pipelines.layout.OzDescriptorSetLayouts
-import vulkan.pipelines.layout.OzUniformMatrixDynamic
-import vulkan.pipelines.layout.OzPipelineLayouts
-import vulkan.pipelines.vertexInput.OzVertexInputs
+import vulkan.pipelines.descriptor.SetLayouts
+import vulkan.pipelines.pipelineLayout.OzUniformMatrixDynamic
+import vulkan.pipelines.pipelineLayout.OzPipelineLayouts
+import vulkan.util.DMs
 import vulkan.util.LoaderGLSL
 import vulkan.util.SurfaceSwapchainSupport
 
@@ -31,16 +32,37 @@ class OzVulkan(val univ: Univ, val window: OzWindow) {
 
     companion object {
 
-        val logger = KotlinLogging.logger {  }
+        val logger = KotlinLogging.logger { }
 
     }
 
-    val context = GenericApplicationContext()
+    val context = GenericApplicationContext(univ.context)
+
+    var instance: OzInstance
+    var surface: OzSurface
+    var physicalDevices: OzPhysicalDevices
+    var physicalDevice: OzPhysicalDevice
+    var surfaceSupport: SurfaceSwapchainSupport
+    var device: OzDevice
+    var queues: OzQueues
+    var commandpools: OzCommandPools
+    var copybuffer: CopyBuffer
+
+    var vma: OzVMA
+    var images: OzImages
+    var imageViews: OzImageViews
+
+    var shadermodules:OzShaderModules
+    var seyLayouts:SetLayouts
+    var descriptorPools:OzDescriptorPools
+    var pipelineLayouts:OzPipelineLayouts
+    var uniformMatrixDynamic:OzUniformMatrixDynamic
+    var dms: DMs
 
     init {
         //default name / destroyMethodName
         val mainBeans = beans {
-            bean<OzWindow>{ window}
+            bean<OzWindow> { window }
             bean<OzInstance>(destroyMethodName = "destroy")
             bean<OzSurface>(destroyMethodName = "destroy")
             bean<OzPhysicalDevices>()
@@ -52,17 +74,16 @@ class OzVulkan(val univ: Univ, val window: OzWindow) {
             bean<CopyBuffer>()
 
             bean<OzVMA>(destroyMethodName = "destroy")
+            bean<OzImages>(destroyMethodName = "destroy")
 
-
-
-
+            bean<OzImageViews>()
 
 
         }
+
         val pipelineBeans = beans() {
             bean<OzShaderModules>(destroyMethodName = "destroy")
-            bean<OzVertexInputs>()
-            bean<OzDescriptorSetLayouts>(destroyMethodName = "destroy")
+            bean<SetLayouts>(destroyMethodName = "destroy")
             bean<OzDescriptorPools>(destroyMethodName = "destroy")
             bean<OzPipelineLayouts>(destroyMethodName = "destroy")
 
@@ -71,6 +92,7 @@ class OzVulkan(val univ: Univ, val window: OzWindow) {
         }
         val extraBeans = beans() {
             bean<OzObjects>()
+            bean<DMs>()
 
         }
         mainBeans.initialize(context)
@@ -79,26 +101,59 @@ class OzVulkan(val univ: Univ, val window: OzWindow) {
         context.refresh()
 
 
+        instance = context.getBean()
+        surface = context.getBean()
+        physicalDevices = context.getBean()
+        physicalDevice = context.getBean()
+        surfaceSupport = context.getBean()
+        device = context.getBean()
+        queues = context.getBean()
+        commandpools = context.getBean()
+        copybuffer = context.getBean()
+
+        vma = context.getBean()
+        images = context.getBean()
+        imageViews = context.getBean()
+        shadermodules = context.getBean()
+        seyLayouts = context.getBean()
+        descriptorPools = context.getBean()
+        pipelineLayouts = context.getBean()
+        uniformMatrixDynamic = context.getBean()
+        dms = context.getBean()
 
     }
 
 
     var swapchainContext = GenericApplicationContext(context)
 
+
     var oldSwapchain: VkSwapchainKHR = VkSwapchainKHR.NULL
+    var framebufferSize: Extent2D
+    var swapchain:OzSwapchain
+    var renderPass:OzRenderPasses
+    var graphicPipelines:OzGraphicPipelines
+    var framebuffers:OzFramebuffers
+//    var drawImage:DrawImage
+    var drawCmd:DrawCmd
+
 
     val swapchainBeans = beans {
         bean<Extent2D> { Extent2D(ref<OzWindow>().framebufferSize) }
-        bean<OzSwapchain>(destroyMethodName = "destroy") { OzSwapchain(ref(), ref(), ref(), oldSwapchain) }
-        bean<OzRenderPass>(destroyMethodName = "destroy") {
-            OzRenderPass(ref(), ref<SurfaceSwapchainSupport>().surfaceFormat.format)
+        bean<OzSwapchain>(destroyMethodName = "destroy") {
+            OzSwapchain(ref(), ref(), ref(),
+                oldSwapchain, ref(), ref(), ref(), ref()
+            )
         }
-        bean<OzImageViews>(destroyMethodName = "destroy")
+
+        bean<OzRenderPasses>(destroyMethodName = "destroy") {
+            OzRenderPasses(ref(), ref<SurfaceSwapchainSupport>().surfaceFormat.format)
+        }
 
         bean<OzGraphicPipelines>(destroyMethodName = "destroy")
         bean<OzFramebuffers>(destroyMethodName = "destroy")
 
-        bean<DrawImage>(destroyMethodName = "destroy")
+//        bean<DrawImage>(destroyMethodName = "destroy")
+        bean<DrawCmd>()
 
     }
 
@@ -106,6 +161,14 @@ class OzVulkan(val univ: Univ, val window: OzWindow) {
         swapchainBeans.initialize(swapchainContext)
         swapchainContext.refresh()
         oldSwapchain = swapchainContext.getBean<OzSwapchain>().swapchain
+
+        framebufferSize = swapchainContext.getBean()
+        swapchain = swapchainContext.getBean()
+        renderPass = swapchainContext.getBean()
+        graphicPipelines = swapchainContext.getBean()
+        framebuffers = swapchainContext.getBean()
+//        drawImage = swapchainContext.getBean()
+        drawCmd = swapchainContext.getBean()
     }
 
     fun recreateSwapchainContext() {
@@ -115,9 +178,15 @@ class OzVulkan(val univ: Univ, val window: OzWindow) {
         swapchainContext.close()
         swapchainContext = swapchainContext_
         oldSwapchain = swapchainContext.getBean<OzSwapchain>().swapchain
+
+        framebufferSize = swapchainContext.getBean()
+        swapchain = swapchainContext.getBean()
+        renderPass = swapchainContext.getBean()
+        graphicPipelines = swapchainContext.getBean()
+        framebuffers = swapchainContext.getBean()
+//        drawImage = swapchainContext.getBean()
+        drawCmd = swapchainContext.getBean()
     }
-
-
 
 
     var shouldRecreate = false
@@ -147,9 +216,11 @@ class OzVulkan(val univ: Univ, val window: OzWindow) {
 //        afterSwapchainRecreateEvent.forEach {
 //            it.invoke()
 //        }
-        swapchainContext.getBean<OzObjects>().getObjects().forEach {
-            it.data.afterSwapchainRecreated()
-        }
+
+        univ.event.afterRecreateSwapchain.send(windowSize)
+//        swapchainContext.getBean<OzObjects>().getObjects().forEach {
+//            it.data.afterSwapchainRecreated()
+//        }
 
     }
 

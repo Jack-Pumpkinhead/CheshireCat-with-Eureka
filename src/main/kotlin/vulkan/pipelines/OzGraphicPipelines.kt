@@ -2,10 +2,9 @@ package vulkan.pipelines
 
 import vkk.vk10.structs.Extent2D
 import vulkan.OzDevice
-import vulkan.OzRenderPass
+import vulkan.OzRenderPasses
 import vulkan.OzVulkan
-import vulkan.pipelines.layout.OzPipelineLayouts
-import vulkan.pipelines.vertexInput.OzVertexInputs
+import vulkan.pipelines.pipelineLayout.OzPipelineLayouts
 
 /**
  * Created by CowardlyLion on 2020/5/2 22:42
@@ -13,28 +12,29 @@ import vulkan.pipelines.vertexInput.OzVertexInputs
 class OzGraphicPipelines(
     val device: OzDevice,
     shadermodule: OzShaderModules,
-    vertexInputs: OzVertexInputs,
     pipelineLayouts: OzPipelineLayouts,
-    renderpass: OzRenderPass,
+    renderpass: OzRenderPasses,
     extent2D: Extent2D
 ) {
 
-    var hellobuffer =
-        OzGraphicPipelineHelloBuffer(device, shadermodule, vertexInputs, pipelineLayouts, renderpass, 0, extent2D)
-    var hellomvp = OzGPUniform(device, shadermodule, vertexInputs, pipelineLayouts, renderpass, 0, extent2D)
-    var hellomvp2 = OzGPUniformDynamic(device, shadermodule, vertexInputs, pipelineLayouts, renderpass, 0, extent2D)
+    val hellobuffer =
+        OzGraphicPipelineHelloBuffer(device, shadermodule, pipelineLayouts, renderpass, 0, extent2D)
+    val hellomvp = OzGPUniform(device, shadermodule, pipelineLayouts, renderpass, 0, extent2D)
+    val hellomvp2 = OzGPUniformDynamic(device, shadermodule, pipelineLayouts, renderpass, 0, extent2D)
+    val hellomvp3 = PipelineBasic(device, shadermodule, pipelineLayouts, renderpass, 0, extent2D)
+    val helloSampler = GPTextured(device, shadermodule, pipelineLayouts, renderpass, 0, extent2D)
+    val hellodepth = GPTexturedDepth(device, shadermodule, pipelineLayouts, renderpass, 0, extent2D)
 
 
     fun destroy() {
         hellobuffer.destroy()
         hellomvp.destroy()
         hellomvp2.destroy()
+        helloSampler.destroy()
         OzVulkan.logger.info {
             "graphicPipelines destroyed"
         }
     }
-
-
 
 
 }

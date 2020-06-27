@@ -1,12 +1,9 @@
 package vulkan
 
 import game.main.OzConstants
-import vkk.VkPhysicalDeviceType
+import vkk.*
 import vkk.identifiers.PhysicalDevice
-import vkk.vk10.enumerateDeviceExtensionProperties
-import vkk.vk10.features
-import vkk.vk10.properties
-import vkk.vk10.queueFamilyProperties
+import vkk.vk10.*
 import vkk.vk10.structs.ExtensionProperties
 import vkk.vk10.structs.PhysicalDeviceFeatures
 import vkk.vk10.structs.PhysicalDeviceProperties
@@ -22,12 +19,56 @@ class OzPhysicalDevice(val pd: PhysicalDevice) {
     val features: PhysicalDeviceFeatures = pd.features
     val extensions: List<String> = pd.enumerateDeviceExtensionProperties().map(ExtensionProperties::extensionName)
 
+    val depthFormat = findDepthFormat() //D32_SFLOAT_S8_UINT
+
+    init {
+        OzVulkan.logger.info {
+            depthFormat
+        }
+    }
+
     fun supported(): Boolean =
         properties.deviceType == VkPhysicalDeviceType.DISCRETE_GPU &&
                 features.geometryShader &&
+                features.samplerAnisotropy &&
                 extensions.containsAll(OzConstants.Extensions)
 
-//    val min = properties.limits.minUniformBufferOffsetAlignment
+    //    val min = properties.limits.minUniformBufferOffsetAlignment
+    fun firstSupportedFormat(candidates: List<VkFormat>, tiling: VkImageTiling, features: VkFormatFeature): VkFormat {
+        for (format in candidates) {
 
+            val properties = pd.getFormatProperties(format)
+            when (tiling) {
+                VkImageTiling.LINEAR -> {
+                    if (properties.linearTilingFeatures.has(features)) {
+                        return format
+                    }
+                }
+                VkImageTiling.OPTIMAL ->{
+                    if (properties.optimalTilingFeatures.has(features)) {
+                        return format
+                    }
+                }
+            }
+        }
+        OzVulkan.logger.warn {
+            "supported format not found"
+        }
+        return candidates[0]
+    }
+    fun findDepthFormat() = firstSupportedFormat(
+        listOf(
+            VkFormat.D32_SFLOAT,
+            VkFormat.D32_SFLOAT_S8_UINT,
+            VkFormat.D24_UNORM_S8_UINT
+        ),
+        VkImageTiling.OPTIMAL,
+        VkFormatFeature.DEPTH_STENCIL_ATTACHMENT_BIT
+    )
 
+}
+
+fun VkFormat.hasStencil(): Boolean {
+    return this == VkFormat.D32_SFLOAT_S8_UINT ||
+            this == VkFormat.D24_UNORM_S8_UINT
 }

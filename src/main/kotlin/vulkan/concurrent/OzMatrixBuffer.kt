@@ -10,7 +10,6 @@ import kotlinx.coroutines.sync.withLock
 import vkk.entities.VkDeviceSize
 import vkk.memCopy
 import vulkan.OzPhysicalDevice
-import vulkan.OzVulkan
 import vulkan.buffer.OzVMA
 
 /**
@@ -57,7 +56,7 @@ class OzMatrixBuffer(val vma: OzVMA, val physicalDevice: OzPhysicalDevice) {
 
     var size = matrices.size
     var bytes = alignment * size
-    var buffer = vma.of_uniform_mf(1)   //initial nonzero to prevent null pointer exception
+    var buffer = vma.of_uniform_manual_flush(1)   //initial nonzero to prevent null pointer exception
 
     suspend fun set(index:Int,mat:Mat4) = mutex.withLock {
         matrices[index] = mat
@@ -69,10 +68,10 @@ class OzMatrixBuffer(val vma: OzVMA, val physicalDevice: OzPhysicalDevice) {
                 size = matrices.size
                 bytes = alignment * size
                 buffer.destroy()
-                buffer = vma.of_uniform_mf(bytes)
+                buffer = vma.of_uniform_manual_flush(bytes)
             }
             Stack { stack ->
-                var adr = buffer.map()
+                var adr = buffer.memory.map()
                 matrices.forEach {
                     val floatBuffer = it.toFloatBuffer(stack)
                     memCopy(floatBuffer.adr, adr, VkDeviceSize(floatBuffer.remSize))
@@ -82,7 +81,7 @@ class OzMatrixBuffer(val vma: OzVMA, val physicalDevice: OzPhysicalDevice) {
             /*OzVulkan.logger.info {
                 matrices.size
             }*/
-            buffer.flush()
+            buffer.memory.flush()
         }
 
     }

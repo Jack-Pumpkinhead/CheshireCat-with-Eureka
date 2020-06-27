@@ -7,7 +7,7 @@ import mu.KotlinLogging
 import org.springframework.beans.factory.getBean
 import vulkan.OzDevice
 import vulkan.OzVulkan
-
+@Deprecated("old")
 class Drawing(val ozVulkan: OzVulkan, val frameLoop: FrameLoop) {
 
     companion object {

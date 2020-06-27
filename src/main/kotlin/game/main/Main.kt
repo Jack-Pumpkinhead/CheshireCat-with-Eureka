@@ -1,15 +1,23 @@
 package game.main
 
+import game.GameObjects
+import game.entity.Emeralds
+import game.event.Events
+import game.input.GLSLoader
+import game.input.SpringInput
 import game.loop.FrameLoop
-import game.loop.ticker.FixRateAcc
+import game.loop.Gameloop
 import game.main.OzConstants.HEIGHT
 import game.main.OzConstants.TITLE
 import game.main.OzConstants.WIDTH
 import game.window.OzWindow
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.TickerMode
+import kotlinx.coroutines.channels.ticker
 import mu.KotlinLogging
+import org.springframework.beans.factory.getBean
+import org.springframework.context.support.GenericApplicationContext
+import org.springframework.context.support.beans
 import uno.glfw.glfw
 import uno.glfw.windowHint
 import vulkan.OzVulkan
@@ -26,7 +34,18 @@ fun main() {
 
 class Univ(){
 
-    val logger=KotlinLogging.logger { }
+    companion object {
+        val logger = KotlinLogging.logger { }
+    }
+
+    val context = GenericApplicationContext()
+    val springInput: SpringInput
+    val glsl:GLSLoader
+    val emeralds:Emeralds
+    val gameObjects:GameObjects
+
+
+    val event = Events()
 
     val window: OzWindow
     init {
@@ -43,6 +62,20 @@ class Univ(){
             installCallbacks = true
         )
         window.installDefaultCallbacks()
+
+        val beans = beans {
+            bean<SpringInput>()
+            bean<GLSLoader>(destroyMethodName = "destroy")
+            bean<Emeralds>()
+        }
+        beans.initialize(context)
+        context.refresh()
+        springInput = context.getBean()
+        glsl = context.getBean()
+        emeralds = context.getBean()
+        gameObjects = GameObjects(this)
+
+//        glsl.init()
     }
 
     val vulkan = OzVulkan(this, window)
@@ -50,14 +83,31 @@ class Univ(){
 
     val scope = CoroutineScope(Dispatchers.Default)
 
-    val ticker = FixRateAcc(initialDelayMillis = 100, context = scope.coroutineContext)
-
     val frameLoop = FrameLoop(this, window)
+
+    val gameloop = Gameloop(this)
 
     fun start() {
 
+        runBlocking {
+            event.launch(scope)
+        }
+
         scope.launch {
-            ticker.ticking()
+            val ticker = ticker(1000, 0, this.coroutineContext, TickerMode.FIXED_PERIOD)
+            var i = 0L
+            while (isActive) {
+                ticker.receive()
+                event.perSecond.send(i)
+                i++
+            }
+        }
+
+
+
+
+        scope.launch {
+            gameloop.loop()
         }
 
 

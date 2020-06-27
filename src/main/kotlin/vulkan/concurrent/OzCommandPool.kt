@@ -1,7 +1,6 @@
 package vulkan.concurrent
 
 import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.actor
 import kotlinx.coroutines.selects.select
 import vkk.VkCommandBufferLevel
@@ -30,6 +29,7 @@ class OzCommandPool(
         ) : Action()
 
         class FreeCB(val cb: CommandBuffer, val resp: CompletableJob) : Action()
+        class FreeCBs(val cbs: Array<CommandBuffer>, val resp: CompletableJob) : Action()
         class Reset(val resp: CompletableJob) : Action()
         //Trimming may be an expensive operation, and should not be called frequently.
         class Trim(val resp: CompletableJob) : Action()
@@ -43,6 +43,7 @@ class OzCommandPool(
         actor.send(Action.AllocateCB(resp = resp))
         return resp
     }
+
     suspend fun allocate(size: Int): CompletableDeferred<Array<CommandBuffer>> {
         val resp = CompletableDeferred<Array<CommandBuffer>>()
         actor.send(Action.AllocateCBs(count = size, resp = resp))
@@ -54,6 +55,12 @@ class OzCommandPool(
         actor.send(Action.FreeCB(cb, resp))
         return resp
     }
+    suspend fun free(cbs: Array<CommandBuffer>): Job {
+        val resp = Job()
+        actor.send(Action.FreeCBs(cbs, resp))
+        return resp
+    }
+
     suspend fun reset(): Job {
         val resp = Job()
         actor.send(Action.Reset(resp))
@@ -116,6 +123,10 @@ class OzCommandPool(
                         )
                         is Action.FreeCB -> {
                             device.device.freeCommandBuffers(commandPool, msg.cb)
+                            msg.resp.complete()
+                        }
+                        is Action.FreeCBs -> {
+                            device.device.freeCommandBuffers(commandPool, msg.cbs)
                             msg.resp.complete()
                         }
                         is Action.Reset -> {

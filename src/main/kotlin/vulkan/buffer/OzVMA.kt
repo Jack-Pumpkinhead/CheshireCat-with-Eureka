@@ -1,19 +1,29 @@
 package vulkan.buffer
 
 import glm_.L
-import kool.*
-import org.lwjgl.system.MemoryUtil.*
+import kool.BYTES
+import kool.PointerBuffer
+import kool.Stack
+import kool.adr
+import org.lwjgl.system.MemoryUtil.NULL
+import org.lwjgl.system.MemoryUtil.memPutAddress
 import org.lwjgl.util.vma.Vma
 import org.lwjgl.util.vma.VmaAllocationCreateInfo
 import org.lwjgl.util.vma.VmaAllocatorCreateInfo
 import org.lwjgl.util.vma.VmaVulkanFunctions
 import org.lwjgl.vulkan.VkBufferCreateInfo
+import org.lwjgl.vulkan.VkExtent3D
+import org.lwjgl.vulkan.VkImageCreateInfo
 import vkk.*
+import vkk.vk10.structs.Extent2D
+import vkk.vk10.structs.Extent3D
+import vkk.vk10.structs.ImageCreateInfo
 import vulkan.OzDevice
 import vulkan.OzInstance
 import vulkan.OzPhysicalDevice
 import vulkan.OzVulkan
-import vulkan.drawing.VMABuffer
+import vulkan.command.CopyBuffer
+import vulkan.image.VmaImage
 
 class OzVMA(
     val ozInstance: OzInstance,
@@ -29,42 +39,40 @@ class OzVMA(
         memoryProperty: Int,
         memoryProperty_prefered: Int = 0,
         vmaMemoryUsage: Int
-    ): VMABuffer {
-        return Stack {
-            val bufferCI = VkBufferCreateInfo.mallocStack(it).set(
-                VkStructureType.BUFFER_CREATE_INFO.i,
-                NULL,
-                VkBufferCreate(0).i,
-                bytes,
-                bufferUsage,
-                VkSharingMode.EXCLUSIVE.i,
-                null
-            )
-            val vmaAllocationCI = VmaAllocationCreateInfo.mallocStack(it).set(
-                0,
-                vmaMemoryUsage,
-                memoryProperty,
-                memoryProperty_prefered,
-                0,  // vma library internally queries Vulkan for memory types supported for that buffer or image (function vkGetBufferMemoryRequirements()) and uses only one of these types.
-                NULL,
-                NULL
-            )
-            val allocationP = PointerBuffer(1)
-            val buffer = it.callocLong(1)
-            Vma.vmaCreateBuffer(pAllocator, bufferCI, vmaAllocationCI, buffer, allocationP, null)
-            return@Stack VMABuffer(this.pAllocator, buffer[0], allocationP[0])
-        }
+    ): VmaBuffer = Stack {
+        val bufferCI = VkBufferCreateInfo.mallocStack(it).set(
+            VkStructureType.BUFFER_CREATE_INFO.i,
+            NULL,
+            VkBufferCreate(0).i,
+            bytes,
+            bufferUsage,
+            VkSharingMode.EXCLUSIVE.i,
+            null
+        )
+        val vmaAllocationCI = VmaAllocationCreateInfo.mallocStack(it).set(
+            0,
+            vmaMemoryUsage,
+            memoryProperty,
+            memoryProperty_prefered,
+            0,  // vma library internally queries Vulkan for memory types supported for that buffer or image (function vkGetBufferMemoryRequirements()) and uses only one of these types.
+            NULL,
+            NULL
+        )
+        val allocationP = PointerBuffer(1)
+        val buffer = it.callocLong(1)
+        Vma.vmaCreateBuffer(pAllocator, bufferCI, vmaAllocationCI, buffer, allocationP, null)
+        return@Stack VmaBuffer(this.pAllocator, buffer[0], allocationP[0])
     }
 
 
-    fun of_staging(bytes: Int) = create(
+    fun createBuffer_staging(bytes: Int) = create(
         bytes.L,
         VkBufferUsage.TRANSFER_SRC_BIT.i,
         VkMemoryProperty.HOST_VISIBLE_BIT.i,
         VkMemoryProperty.HOST_COHERENT_BIT.i,
         Vma.VMA_MEMORY_USAGE_CPU_ONLY
     )
-    fun of_staging_vertex(bytes: Int) = create(
+    fun createBuffer_vertexStaging(bytes: Int) = create(
         bytes.L,
         VkBufferUsage.TRANSFER_SRC_BIT.or(VkBufferUsage.VERTEX_BUFFER_BIT),
         VkMemoryProperty.HOST_VISIBLE_BIT.i,
@@ -72,7 +80,7 @@ class OzVMA(
         Vma.VMA_MEMORY_USAGE_CPU_ONLY
     )
 
-    fun of_staging_index(bytes: Int) = create(
+    fun createBuffer_indexStaging(bytes: Int) = create(
         bytes.L,
         VkBufferUsage.TRANSFER_SRC_BIT.or(VkBufferUsage.INDEX_BUFFER_BIT),
         VkMemoryProperty.HOST_VISIBLE_BIT.i,
@@ -81,13 +89,27 @@ class OzVMA(
     )
 
 
-    fun of_VertexBuffer_device_local(bytes: Int): VMABuffer = create(
+    suspend fun to_VertexBuffer_device_local(arr: FloatArray, copyBuffer: CopyBuffer): VmaBuffer {
+        val bytes = arr.size * Float.BYTES
+        val staging = createBuffer_vertexStaging(bytes)
+        Stack {
+            staging.memory.fill(
+                it.mallocFloat(arr.size).put(arr).flip()
+            )
+        }
+        val deviceLocal = of_VertexBuffer_device_local(bytes)
+        copyBuffer.copyBuffer(staging.pBuffer, deviceLocal.pBuffer, bytes)
+        staging.destroy()
+        return deviceLocal
+    }
+
+    fun of_VertexBuffer_device_local(bytes: Int): VmaBuffer = create(
         bytes.L,
         VkBufferUsage.TRANSFER_DST_BIT.or(VkBufferUsage.VERTEX_BUFFER_BIT),
         VkMemoryProperty.DEVICE_LOCAL_BIT.i,
         vmaMemoryUsage = Vma.VMA_MEMORY_USAGE_GPU_ONLY
     )
-    fun of_IndexBuffer_device_local(bytes: Int): VMABuffer = create(
+    fun of_IndexBuffer_device_local(bytes: Int): VmaBuffer = create(
         bytes.L,
         VkBufferUsage.TRANSFER_DST_BIT.or(VkBufferUsage.INDEX_BUFFER_BIT),
         VkMemoryProperty.DEVICE_LOCAL_BIT.i,
@@ -102,14 +124,119 @@ class OzVMA(
         vmaMemoryUsage = Vma.VMA_MEMORY_USAGE_CPU_TO_GPU
     )
 
-    //manual flush
-    fun of_uniform_mf(bytes: Int) = create(
+    fun of_uniform_manual_flush(bytes: Int) = create(
         bytes = bytes.L,
         bufferUsage = VkBufferUsage.UNIFORM_BUFFER_BIT.i,
         memoryProperty = VkMemoryProperty.HOST_VISIBLE_BIT.i,
         vmaMemoryUsage = Vma.VMA_MEMORY_USAGE_CPU_TO_GPU
     )
 
+    fun createBuffer_imageStaging(bytes: Int) = create(
+        bytes = bytes.L,
+        bufferUsage = VkBufferUsage.TRANSFER_SRC_BIT.i,
+        memoryProperty = VkMemoryProperty.HOST_VISIBLE_BIT.i,
+        memoryProperty_prefered = VkMemoryProperty.HOST_COHERENT_BIT.i,
+        vmaMemoryUsage = Vma.VMA_MEMORY_USAGE_CPU_TO_GPU
+    )
+
+    fun createImage_deviceLocal_dstsampled(format: VkFormat, extent3D: Extent3D): VmaImage = createImage_deviceLocal(
+        ImageCreateInfo(
+            flags = VkImageCreate(0).i,
+            imageType = VkImageType._2D,
+            extent = extent3D,
+            mipLevels = 1,
+            arrayLayers = 1,
+            format = format,
+            tiling = VkImageTiling.OPTIMAL,
+            initialLayout = VkImageLayout.UNDEFINED,
+            usage = VkImageUsage.TRANSFER_DST_BIT.or(VkImageUsage.SAMPLED_BIT),
+            samples = VkSampleCount._1_BIT,
+            sharingMode = VkSharingMode.EXCLUSIVE,
+            queueFamilyIndices = null   //with sharingMode
+        )
+    )
+    fun createImage_deviceLocal_depth(format: VkFormat,extent2D: Extent2D): VmaImage = createImage_deviceLocal(
+        ImageCreateInfo(
+            flags = VkImageCreate(0).i,
+            imageType = VkImageType._2D,
+            extent = Extent3D(extent2D, 1),
+            mipLevels = 1,
+            arrayLayers = 1,
+            format = format,
+            tiling = VkImageTiling.OPTIMAL,
+            initialLayout = VkImageLayout.UNDEFINED,
+            usage = VkImageUsage.DEPTH_STENCIL_ATTACHMENT_BIT.i,
+            samples = VkSampleCount._1_BIT,
+            sharingMode = VkSharingMode.EXCLUSIVE,
+            queueFamilyIndices = null   //with sharingMode
+        )
+    )
+
+
+    fun createImage_deviceLocal(imageCI: ImageCreateInfo): VmaImage = createImage_deviceLocal(
+        imageCI.flags,
+        imageCI.imageType.i,
+        imageCI.format.i,
+        imageCI.extent,
+        imageCI.mipLevels,
+        imageCI.arrayLayers,
+        imageCI.samples.i,
+        imageCI.tiling.i,
+        imageCI.usage,
+        imageCI.sharingMode.i,
+        imageCI.queueFamilyIndices,
+        imageCI.initialLayout.i,
+        imageCI.next
+    )
+    fun createImage_deviceLocal(
+        flags: Int = VkImageCreate(0).i,
+        imageType: Int = VkImageType._2D.i,
+        format: Int = VkFormat.B8G8R8A8_SRGB.i,
+        extent: Extent3D,
+        mipLevels: Int = 1,
+        arrayLayers: Int = 1,
+        samples: Int = VkSampleCount._1_BIT.i,
+        tiling: Int = VkImageTiling.OPTIMAL.i,
+        usage: Int = VkImageUsage.TRANSFER_DST_BIT.or(VkImageUsage.SAMPLED_BIT),
+        sharingMode: Int = VkSharingMode.EXCLUSIVE.i,
+        queueFamilyIndices: IntArray? = null,
+        initialLayout: Int = VkImageLayout.UNDEFINED.i,
+        pNext: Long = 0
+    ): VmaImage = Stack {
+        val extent3D = VkExtent3D.mallocStack(it).set(extent.width, extent.height, extent.depth)
+        val queuefamilyIndices = if (queueFamilyIndices != null) {
+            it.mallocInt(queueFamilyIndices!!.size).put(queueFamilyIndices).flip()
+        } else null
+        val imageCreateInfo = VkImageCreateInfo.mallocStack(it).set(
+            VkStructureType.IMAGE_CREATE_INFO.i,
+            pNext,
+            flags,
+            imageType,
+            format,
+            extent3D,
+            mipLevels,
+            arrayLayers,
+            samples,
+            tiling,
+            usage,
+            sharingMode,
+            queuefamilyIndices,
+            initialLayout
+        )
+        val vmaAllocationCI = VmaAllocationCreateInfo.mallocStack(it).set(
+            0,
+            Vma.VMA_MEMORY_USAGE_GPU_ONLY,
+            VkMemoryProperty.DEVICE_LOCAL_BIT.i,
+            0,
+            0,  // vma library internally queries Vulkan for memory types supported for that buffer or image (function vkGetBufferMemoryRequirements()) and uses only one of these types.
+            NULL,
+            NULL
+        )
+        val pImage = it.callocLong(1)
+        val pAllocation = PointerBuffer(1)
+        Vma.vmaCreateImage(pAllocator, imageCreateInfo, vmaAllocationCI, pImage, pAllocation, null)
+        return@Stack VmaImage(pAllocator, pImage.get(), pAllocation.get())
+    }
 
 
 

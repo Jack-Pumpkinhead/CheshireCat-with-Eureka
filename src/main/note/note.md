@@ -11,6 +11,11 @@
     
     ##cost one day: data after Stack{ } will atomatically free !
     
+    cb on commandpool(family i) submit to correct queue(family i)
+    commandbuffer should record in the same thread of allocation
+    
+    name 'sampler' is reserved in glsl
+    
     
 #### Todo list: 
     //use log4j2
@@ -41,3 +46,5 @@
     If the number of currently acquired images is greater than this, vkAcquireNextImageKHR should not be called; if it is, timeout must not be UINT64_MAX.
     
     By default, all calls to functions that take VmaAllocator as first parameter are safe to call from multiple threads simultaneously because they are synchronized internally when needed.
+    
+    depth buffer range [0, 1]

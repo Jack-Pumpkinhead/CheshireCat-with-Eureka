@@ -1,32 +1,27 @@
 package vulkan
 
-import vkk.entities.VkImageView_Array
 import vkk.vk10.structs.Extent2D
-import vkk.vk10.structs.FramebufferCreateInfo
 
 class OzFramebuffers(
     val device: OzDevice,
-    imageViews: OzImageViews,
-    renderpass: OzRenderPass,
+    val swapchain: OzSwapchain,
+    renderpass: OzRenderPasses,
     extent2D: Extent2D
 ) {
 
-    val fbs = imageViews.imageViews.map {
-        OzFramebuffer(
-            device,
-            FramebufferCreateInfo(
-                renderPass = renderpass.renderpass,
-                attachments = VkImageView_Array(listOf(it)),   //VkFramebuffer defines which VkImageView is to be which attachment.
-                width = extent2D.width,
-                height = extent2D.height,
-                layers = 1  //Image layer, not debug layer
-            )
-        )
+    val fb_simple = swapchain.imageViews.map { imageView ->
+        OzFramebuffer(device, renderpass.renderpass, listOf(imageView), extent2D)
+    }
+    val fb_depth = swapchain.imageViews.zip(swapchain.depth).map { (imageView, depth) ->
+        OzFramebuffer(device, renderpass.renderpass_depth, listOf(imageView, depth.imageView), extent2D)
     }
 
 
     fun destroy() {
-        fbs.forEach {
+        fb_simple.forEach {
+            it.destroy()
+        }
+        fb_depth.forEach {
             it.destroy()
         }
         OzVulkan.logger.info {

@@ -1,14 +1,23 @@
 package game.loop
 
-import game.loop.TPSActor.Companion.getTPS
-import game.loop.TPSActor.Companion.getTotal
-import game.loop.TPSActor.Companion.record
+import game.event.FrameTick
+import game.loop.TPSActor_old.Companion.getTPS
+import game.loop.TPSActor_old.Companion.record
+import game.main.Recorder2
 import game.main.Univ
 import game.window.OzWindow
 import kotlinx.coroutines.*
+import kotlinx.coroutines.sync.Semaphore
 import mu.KotlinLogging
+import org.springframework.beans.factory.getBean
 import uno.glfw.glfw
-import vulkan.drawing.Drawing
+import vkk.VkResult
+import vkk.entities.VkFence
+import vkk.extensions.acquireNextImageKHR
+import vulkan.*
+import vulkan.concurrent.SyncArray
+import vulkan.drawing.PerImageConfiguration
+import vulkan.drawing.Submit
 
 class FrameLoop(val univ: Univ, val window: OzWindow) {
 
@@ -16,22 +25,57 @@ class FrameLoop(val univ: Univ, val window: OzWindow) {
 
     val scope = CoroutineScope(Dispatchers.Default)
 
-    val fps = TPSActor.launch(scope)
-
-    val tick = univ.ticker.subscribe()
+    val fps = TPSCounterC()
 
 
 //    class Preparation(val univ: Univ, val image: Int)
 //    val prepareChannel = BroadcastChannel<Preparation>()
 // use actor + action collection
 
+    lateinit var configurations: List<PerImageConfiguration>
+
+    suspend fun makeConfigurations() {
+        val ctx = univ.vulkan.swapchainContext
+        val swapchain = ctx.getBean<OzSwapchain>()
+        val commandPools = ctx.getBean<OzCommandPools>()
+        val cb = commandPools.graphicCP.allocate().await()
+        configurations = swapchain.images.mapIndexed { index, vkImage ->
+            PerImageConfiguration(
+                index, vkImage, swapchain.imageViews[index], swapchain.depth[index],
+                ctx.getBean<OzFramebuffers>().fb_depth[index], ctx.getBean(), swapchain, ctx.getBean(), ctx.getBean()
+            )
+        }
+    }
+
+
+    val size = univ.vulkan.swapchain.images.size
+    val semaphore = Semaphore(size)
+    var semas = List(size) { univ.vulkan.device.semaphore() }
+
+    init {
+        runBlocking {
+            univ.event.afterRecreateSwapchain.subscribe {
+                makeConfigurations()
+            }
+            makeConfigurations()
+        }
+    }
+
+    val submit = Submit(univ.vulkan)
+//    val drawCmds = SyncArray<Recorder>()
+    val drawCmds2 = SyncArray<Recorder2>()
+
     fun loop() {
 
-        val job = scope.launch {
-            while (isActive) {
-                printFPS()
+        scope.launch {
+            univ.event.perSecond.subscribe {
+                val fps = fps.getTPS()
+                logger.info {
+                    "fps: $fps"
+                }
             }
         }
+
 
 
         while (window.isOpen) {
@@ -40,30 +84,90 @@ class FrameLoop(val univ: Univ, val window: OzWindow) {
             pauseForSize()
 
 
-
+//            runBlocking {
 
             if (window.resized || univ.vulkan.shouldRecreate) {
                 runBlocking {
                     univ.vulkan.recreateSwapchain(window.framebufferSize)
                 }
+                univ.vulkan.shouldRecreate = false
+
             }
 
-            val tick = runBlocking { fps.getTotal() }
+//                semaphore.withPermit {  //暂时单线程
+
+            val tick = runBlocking { fps.record() }
+            runBlocking { univ.event.onFrameStart.send(FrameTick(tick, System.currentTimeMillis())) }
 
 
-//            listeners.forEach { it.update(tick) }
-//            drawframe.draw()
+            val aquireS = semas[tick.rem(size).toInt()]
 
 
-            drawing.draw()
+            var success = false
+
+            val imageIndex = univ.vulkan.device.device.acquireNextImageKHR(
+                swapchain = univ.vulkan.swapchain.swapchain,
+                timeout = -1L,
+                semaphore = aquireS,
+                fence = VkFence.NULL,
+                check = {
+                    success = checkResult(it, "acquire")
+                }
+            )
+
+            if (!success) {
+                univ.vulkan.shouldRecreate = true
+
+            }
 
 
-            runBlocking { fps.record() }
+
+            runBlocking {
+                univ.vulkan.dms.update(imageIndex)  //update before record
+
+                val cb = univ.vulkan.commandpools.graphicMutableCP.allocate().await()
+
+                val fb = univ.vulkan.framebuffers.fb_depth[imageIndex]
+                fb.begin(cb)
+                drawCmds2.withLock {cmds->
+                    cmds.forEach {
+                        it(cb, univ.vulkan.dms.dmDescriptors[imageIndex])
+                    }
+                }
+                fb.end(cb)
+
+
+                val success = submit.submit(cb, aquireS, imageIndex)
+                if (!success) {
+                    univ.vulkan.shouldRecreate = true
+                }
+            }
+
+//                    drawing.draw()
+//                    val result = runBlocking { configurations[imageIndex].submit(aquireS)}
+
+
+            runBlocking { univ.event.onFrameEnd.send(FrameTick(tick, System.currentTimeMillis())) }
+
+//                }
+//            }
+
             window.swapBuffers()
+
         }
 
-        job.cancel()
+    }
 
+    fun checkResult(result: VkResult, state: String): Boolean {
+        if (result == VkResult.ERROR_OUT_OF_DATE_KHR) {
+            OzVulkan.logger.warn("$state: out of date")
+            return false
+        } else if (result != VkResult.SUCCESS && result != VkResult.SUBOPTIMAL_KHR) {
+            OzVulkan.logger.warn("${result.description}")
+            OzVulkan.logger.warn("$state: no success and no suboptimal")
+            return false
+        }
+        return true
     }
 
     fun pauseForSize() {
@@ -72,26 +176,7 @@ class FrameLoop(val univ: Univ, val window: OzWindow) {
         }
     }
 
-    val drawing = Drawing(univ.vulkan, this)
+//    val drawing = Drawing(univ.vulkan, this)
 
-
-    //use while(window.isActive) would throw exception at close
-    suspend fun printFPS() {
-        tick.receive()
-
-        val fps = fps.getTPS()
-        logger.info {
-            "fps: $fps"
-        }
-        /*logger.info {
-            "window framebuffer size: ${univ.window.framebufferSize}"
-        }
-        logger.info {
-            "surface size: ${univ.vulkan.physicalDevice.pd.getSurfaceCapabilitiesKHR(univ.vulkan.surface.surface).currentExtent.size}"
-        }*/
-        /*logger.info {
-            "cmds: ${univ.vulkan.framebuffer.fbs[0].drawCmds.size}"
-        }*/
-    }
 
 }

@@ -12,11 +12,6 @@ import vulkan.OzVulkan
  */
 class MVP(val vulkan: OzVulkan) {
 
-    companion object {
-
-        val logger = KotlinLogging.logger { }
-
-    }
 
     init {
 //        glm.perspective()

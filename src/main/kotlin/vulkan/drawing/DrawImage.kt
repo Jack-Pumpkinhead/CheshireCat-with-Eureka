@@ -15,7 +15,7 @@ import vulkan.OzDevice
 import vulkan.OzQueues
 import vulkan.OzSwapchain
 import vulkan.OzVulkan
-import vulkan.pipelines.layout.OzUniformMatrixDynamic
+import vulkan.pipelines.pipelineLayout.OzUniformMatrixDynamic
 
 /**
  * Created by CowardlyLion on 2020/5/8 21:55
@@ -27,8 +27,8 @@ class DrawImage(
     val queues: OzQueues,
     val ozObjects: OzObjects
 ) {
-    val submitJob: Array<CompletableDeferred<VkResult>> = Array(swapchain.images.size) { CompletableDeferred(VkResult.SUCCESS) }
-    val submitS: Array<VkSemaphore> = Array(swapchain.images.size) { device.semaphore() }
+    val submitJob: Array<CompletableDeferred<VkResult>> = Array(swapchain.drawCmds.size) { CompletableDeferred(VkResult.SUCCESS) }
+    val submitS: Array<VkSemaphore> = Array(swapchain.drawCmds.size) { device.semaphore() }
     val acquiredS = device.semaphore()
 
 
@@ -64,7 +64,7 @@ class DrawImage(
         val cmds = runBlocking {
             ozObjects.refresh(imageIndex)
             submitJob[imageIndex].await()
-            swapchain.images[imageIndex].getDrawCmds()
+            swapchain.drawCmds[imageIndex].getDrawCmds()
         }
 
 //        device.device.waitForFences(submitF[imageIndex], true, -1L)

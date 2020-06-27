@@ -31,11 +31,13 @@ class OzDevice(
     }
 
     val graphicI = nextQueue(surfaceSupport.queuefamily_graphic)
+    val graphicI_2 = nextQueue(surfaceSupport.queuefamily_graphic)
     val presentI = nextQueue(surfaceSupport.queuefamily_present)
     val transferI = nextQueue(surfaceSupport.queuefamily_transfer)
 
     val queueIs = listOf(
         graphicI,
+        graphicI_2,
         presentI,
         transferI
     )

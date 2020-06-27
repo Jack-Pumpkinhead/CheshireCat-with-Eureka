@@ -6,17 +6,16 @@ import vkk.entities.*
 import vkk.vk10.createGraphicsPipeline
 import vkk.vk10.structs.*
 import vulkan.OzDevice
-import vulkan.OzRenderPass
+import vulkan.OzRenderPasses
 import vulkan.OzVulkan
-import vulkan.pipelines.layout.OzPipelineLayouts
-import vulkan.pipelines.vertexInput.OzVertexInputs
+import vulkan.pipelines.pipelineLayout.OzPipelineLayouts
+import vulkan.pipelines.vertexInput.Vertex_p3c3
 
 class OzGraphicPipelineHelloBuffer(
     val device: OzDevice,
     shadermodule: OzShaderModules,
-    vertexInputs: OzVertexInputs,
     pipelineLayouts: OzPipelineLayouts,
-    renderPass: OzRenderPass,
+    renderPasses: OzRenderPasses,
     subpass: Int = 0,
     extent2D: Extent2D
 ) {
@@ -95,7 +94,7 @@ class OzGraphicPipelineHelloBuffer(
 
         val graphicsPipelineCI = GraphicsPipelineCreateInfo(
             stages = arrayOf(shaderstageCI_vert, shaderstageCI_frag),
-            vertexInputState = vertexInputs.p3c3.inputState,
+            vertexInputState = Vertex_p3c3.inputState,
             inputAssemblyState = inputAssemblyStateCI,
             viewportState = viewportSCI,
             rasterizationState = rasterizationSCI,
@@ -104,7 +103,7 @@ class OzGraphicPipelineHelloBuffer(
             colorBlendState = colorBlendSCI,
             dynamicState = null,
             layout = pipelineLayouts.empty,
-            renderPass = renderPass.renderpass,
+            renderPass = renderPasses.renderpass,
             subpass = subpass,
             basePipelineHandle = VkPipeline.NULL,
             basePipelineIndex = -1

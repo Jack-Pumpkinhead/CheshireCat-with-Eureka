@@ -15,6 +15,7 @@ import vkk.memCopy
 import vkk.vk10.structs.Extent2D
 import vulkan.OzDevice
 import vulkan.buffer.OzVMA
+import vulkan.buffer.VmaBuffer
 
 /**
  * Created by CowardlyLion on 2020/5/5 13:04
@@ -23,7 +24,7 @@ class OzUniformBuffer(val device: OzDevice, val vma: OzVMA, val count: Int) {
 
 
     //need to recreate when swapchain recreated //maybe not
-    val buffers = List<VMABuffer>(count){ of(it.L)}
+    val buffers = List<VmaBuffer>(count){ of(it.L)}
 
     fun of(bytes: Long) = vma.create(
         bytes = (4 * 4 * 3 * Long.SIZE_BYTES).L,
@@ -47,11 +48,11 @@ class OzUniformBuffer(val device: OzDevice, val vma: OzVMA, val count: Int) {
 
         Stack { stack ->
 
-            buffers[imageIndex].withMap {
+            buffers[imageIndex].memory.withMap {
                 var adr = it
                 val modelB = model.toFloatBuffer(stack)
                 memCopy(modelB.adr, adr, VkDeviceSize(modelB.remSize))
-                adr+=modelB.remSize
+                adr += modelB.remSize
 
                 val viewB = view.toFloatBuffer(stack)
                 memCopy(viewB.adr, adr, VkDeviceSize(viewB.remSize))

@@ -10,7 +10,10 @@ import vulkan.concurrent.OzCommandPool
 class OzCommandPools(val device: OzDevice) {
 
     //can create multiple command pools
-    val graphicCP = of(queueFamilyIndex = device.surfaceSupport.queuefamily_graphic)
+    val graphicCP = of(
+        flags = VkCommandPoolCreate.RESET_COMMAND_BUFFER_BIT.i,
+        queueFamilyIndex = device.surfaceSupport.queuefamily_graphic
+    )
     val graphicMutableCP = of(queueFamilyIndex = device.surfaceSupport.queuefamily_graphic)
     val transferCP = of(VkCommandPoolCreate.TRANSIENT_BIT.i, device.surfaceSupport.queuefamily_transfer)
 

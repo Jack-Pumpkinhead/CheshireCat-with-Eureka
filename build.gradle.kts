@@ -15,7 +15,19 @@ java {
     version = "1.0-SNAPSHOT"
     sourceCompatibility = JavaVersion.VERSION_14
 //    targetCompatibility = JavaVersion.VERSION_1_8
+
 }
+/*
+tasks {
+    jar {
+        manifest {
+            attributes(
+                mapOf("Implementation-Title" to project.name,
+                    "Implementation-Version" to project.version)
+            )
+        }
+    }
+}*/
 
 val lwjglVersion = "3.2.3"
 val jomlVersion = "1.9.22"
@@ -85,13 +97,13 @@ dependencies {
         exclude("com.github.kotlin-graphics","kotlin-unsigned")
         exclude("org.jetbrains.kotlin","kotlin-reflect")
     }
-    testImplementation("com.github.kotlin-graphics.glm","glm-test","-SNAPSHOT"){
-        exclude("com.github.kotlin-graphics","kool")
-        exclude("com.github.kotlin-graphics","kotlin-unsigned")
-        exclude("org.jetbrains.kotlin","kotlin-reflect")
-        exclude("org.junit.jupiter","junit-jupiter-api")
-        exclude("org.slf4j","slf4j-api")
-    }
+  /*  implementation("com.github.kotlin-graphics.glm", "glm-test", "-SNAPSHOT") {
+        exclude("com.github.kotlin-graphics", "kool")
+        exclude("com.github.kotlin-graphics", "kotlin-unsigned")
+        exclude("org.jetbrains.kotlin", "kotlin-reflect")
+        exclude("org.junit.jupiter", "junit-jupiter-api")
+        exclude("org.slf4j", "slf4j-api")
+    }*/
     implementation("com.github.kotlin-graphics:glm:-SNAPSHOT"){
         exclude("com.github.kotlin-graphics.glm", "glm-test")
         exclude("com.github.kotlin-graphics","kool")
@@ -106,7 +118,8 @@ dependencies {
 //    implementation("com.github.kotlin-graphics:kotlin-unsigned:v3.2.4")
     implementation("com.github.kotlin-graphics:kotlin-unsigned:-SNAPSHOT")
 
-    implementation("com.github.kotlin-graphics.uno-sdk:uno-core:-SNAPSHOT"){
+//    implementation("com.github.kotlin-graphics.uno-sdk:uno-core:-SNAPSHOT"){
+    implementation("com.github.kotlin-graphics.uno-sdk:uno-core:55063f983dba678375a5196ec13e4d716bb474f4"){
         exclude("com.github.kotlin-graphics.glm","glm")
         exclude("com.github.kotlin-graphics","gln")
         exclude("com.github.kotlin-graphics","gli")
@@ -114,7 +127,7 @@ dependencies {
         exclude("com.github.kotlin-graphics","kotlin-unsigned")
         exclude("org.jetbrains.kotlin","kotlin-reflect")
     }
-    implementation("com.github.kotlin-graphics:uno-sdk:-SNAPSHOT"){
+    /*implementation("com.github.kotlin-graphics:uno-sdk:-SNAPSHOT"){
         exclude("com.github.kotlin-graphics","vkk")
         exclude("com.github.kotlin-graphics","gln")
         exclude("com.github.kotlin-graphics.glm","glm")
@@ -125,6 +138,7 @@ dependencies {
         exclude("org.jetbrains.kotlin","kotlin-reflect")
     }
     implementation("com.github.kotlin-graphics.uno-sdk:build:-SNAPSHOT"){
+//    implementation("com.github.kotlin-graphics.uno-sdk:build:5506359"){
         exclude("com.github.kotlin-graphics","vkk")
         exclude("com.github.kotlin-graphics","gln")
         exclude("com.github.kotlin-graphics.glm","glm")
@@ -153,8 +167,8 @@ dependencies {
         exclude("com.github.kotlin-graphics","kool")
         exclude("com.github.kotlin-graphics","kotlin-unsigned")
         exclude("org.jetbrains.kotlin","kotlin-reflect")
-    }
-    implementation("com.github.kotlin-graphics.uno-sdk:uno-vk:-SNAPSHOT"){
+    }*/
+    implementation("com.github.kotlin-graphics.uno-sdk:uno-vk:55063f983dba678375a5196ec13e4d716bb474f4"){
         exclude("com.github.kotlin-graphics","vkk")
         exclude("com.github.kotlin-graphics","gln")
         exclude("com.github.kotlin-graphics.glm","glm")
@@ -173,11 +187,13 @@ dependencies {
         exclude("com.github.kotlin-graphics","kool")
         exclude("com.github.kotlin-graphics","kotlin-unsigned")
     }
+    implementation("com.github.kotlin-graphics:assimp:-SNAPSHOT")
 
 //    implementation("graphics.scenery:spirvcrossj:-SNAPSHOT"){ //not find
     implementation("graphics.scenery:spirvcrossj:0.7.0-1.1.106.0"){
         exclude("com.github.kotlin-graphics.uno-sdk")
     }
+//    implementation("graphics.scenery", "spirvcrossj", "0.7.0-1.1.106.0", classifier = lwjglNatives) {
     runtimeOnly("graphics.scenery", "spirvcrossj", "0.7.0-1.1.106.0", classifier = lwjglNatives) {
         exclude("com.github.kotlin-graphics.uno-sdk")
     }

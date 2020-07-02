@@ -2,10 +2,9 @@ package vulkan.drawing
 
 import game.loop.FrameLoop
 import kotlinx.coroutines.runBlocking
-import math.matrix.MVP
+import math.matrix.MVP_deprecated
 import mu.KotlinLogging
 import org.springframework.beans.factory.getBean
-import vulkan.OzDevice
 import vulkan.OzVulkan
 @Deprecated("old")
 class Drawing(val ozVulkan: OzVulkan, val frameLoop: FrameLoop) {
@@ -26,7 +25,7 @@ class Drawing(val ozVulkan: OzVulkan, val frameLoop: FrameLoop) {
     init {
         val ozObjects = ozVulkan.swapchainContext.getBean<OzObjects>()
         runBlocking {
-            ozObjects.register(OzObject(rectangle, MVP(ozVulkan)))
+            ozObjects.register(OzObject(rectangle, MVP_deprecated(ozVulkan)))
         }
 
     }

@@ -7,6 +7,9 @@ import game.main.Univ
  */
 open class Primitive(val univ: Univ) {
 
+    var instantiate = true
+    var active = true
+
     open suspend fun initialize() {
 
     }

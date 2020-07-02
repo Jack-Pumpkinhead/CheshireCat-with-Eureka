@@ -1,6 +1,7 @@
 package vulkan.pipelines
 
 import game.main.Recorder2
+import game.main.Recorder3
 import kool.BYTES
 import kool.Stack
 import kotlinx.coroutines.runBlocking
@@ -15,14 +16,17 @@ import vkk.vk10.structs.GraphicsPipelineCreateInfo
 import vulkan.OzDevice
 import vulkan.OzRenderPasses
 import vulkan.OzVulkan
+import vulkan.buffer.OzVMA
 import vulkan.buffer.VmaBuffer
+import vulkan.command.CopyBuffer
+import vulkan.pipelines.descriptor.LayoutMVP
 import vulkan.pipelines.pipelineLayout.OzPipelineLayouts
 import vulkan.pipelines.vertexInput.Vertex_p3c3
 
 /**
- * Created by CowardlyLion on 2020/6/15 21:09
+ * Created by CowardlyLion on 2020/6/28 22:08
  */
-class PipelineBasic(
+class PipelineBasic2 (
     val device: OzDevice,
     shadermodule: OzShaderModules,
     pipelineLayouts: OzPipelineLayouts,
@@ -30,16 +34,13 @@ class PipelineBasic(
     subpass: Int = 0,
     extent2D: Extent2D
 ) {
-
     val graphicsPipeline: VkPipeline
-    val layout = pipelineLayouts.uniformDynamic
+    val layout = pipelineLayouts.mvp
 
     init {
-
-
         val graphicsPipelineCI = GraphicsPipelineCreateInfo(
             stages = arrayOf(
-                shadermodule.getPipelineShaderStageCI("hellomvp3.vert"),
+                shadermodule.getPipelineShaderStageCI("hellomvp4.vert"),
                 shadermodule.getPipelineShaderStageCI("basic.frag")
             ),
             vertexInputState = Vertex_p3c3.inputState,
@@ -51,8 +52,8 @@ class PipelineBasic(
             colorBlendState = colorBlendSCI,
             dynamicState = null,
             layout = layout,
-//            renderPass = renderPasses.renderpass,
             renderPass = renderPasses.renderpass_depth,
+//            renderPass = renderPasses.renderpass,
             subpass = subpass,
             basePipelineHandle = VkPipeline.NULL,
             basePipelineIndex = -1
@@ -62,11 +63,20 @@ class PipelineBasic(
             pipelineCache = VkPipelineCache.NULL,
             createInfo = graphicsPipelineCI
         )
-
+    }
+    fun destroy() {
+        device.device.destroy(graphicsPipeline)
+        OzVulkan.logger.info {
+            "${javaClass.name} destroyed"
+        }
     }
 
     class ObjStatic(
-        val vulkan: OzVulkan,
+//        val vulkan: OzVulkan,
+        val vma: OzVMA,
+        val copyBuffer: CopyBuffer,
+        val pipeline:PipelineBasic2,
+        val layoutMVP: LayoutMVP,
         val vert_color: FloatArray,
         val indices: IntArray,
         var matrixIndex: Int
@@ -80,8 +90,8 @@ class PipelineBasic(
 
         init {
 
-            val vertexBuffer = vulkan.vma.createBuffer_vertexStaging(vbytes)
-            val indexBuffer = vulkan.vma.createBuffer_indexStaging(ibytes)
+            val vertexBuffer = vma.createBuffer_vertexStaging(vbytes)
+            val indexBuffer = vma.createBuffer_indexStaging(ibytes)
 
             Stack {
                 vertexBuffer.memory.fill(
@@ -93,12 +103,12 @@ class PipelineBasic(
             }
 
 
-            vertexBuffer_device_local = vulkan.vma.of_VertexBuffer_device_local(vbytes)
-            indexBuffer_device_local = vulkan.vma.of_IndexBuffer_device_local(ibytes)
+            vertexBuffer_device_local = vma.of_VertexBuffer_device_local(vbytes)
+            indexBuffer_device_local = vma.of_IndexBuffer_device_local(ibytes)
 
             runBlocking {
-                vulkan.copybuffer.copyBuffer(vertexBuffer.pBuffer, vertexBuffer_device_local.pBuffer, vbytes)
-                vulkan.copybuffer.copyBuffer(indexBuffer.pBuffer, indexBuffer_device_local.pBuffer, ibytes)
+                copyBuffer.copyBuffer(vertexBuffer.pBuffer, vertexBuffer_device_local.pBuffer, vbytes)
+                copyBuffer.copyBuffer(indexBuffer.pBuffer, indexBuffer_device_local.pBuffer, ibytes)
             }
             vertexBuffer.destroy()
             indexBuffer.destroy()
@@ -110,10 +120,10 @@ class PipelineBasic(
 
 
 
-        val recorder: Recorder2 = { cb,set ->
+        val recorder: Recorder3 = { cb,imageIndex ->
             cb.bindPipeline(
                 pipelineBindPoint = VkPipelineBindPoint.GRAPHICS,
-                pipeline = vulkan.graphicPipelines.hellomvp3.graphicsPipeline
+                pipeline = pipeline.graphicsPipeline
             )
             cb.bindVertexBuffers(
                 firstBinding = 0,
@@ -130,13 +140,12 @@ class PipelineBasic(
 
             cb.bindDescriptorSets(
                 pipelineBindPoint = VkPipelineBindPoint.GRAPHICS,
-                layout = vulkan.pipelineLayouts.uniformDynamic,
+                layout = pipeline.layout,
                 firstSet = 0,
                 descriptorSets = VkDescriptorSet_Array(
-                    listOf(set.descriptorSets)
+                    listOf(layoutMVP.sets[imageIndex])
                 ),
-                dynamicOffsets = intArrayOf(matrixIndex * set.matrices.dynamicAlignment.toInt())   //one per dynamic descriptorSet
-//                dynamicOffsets = intArrayOf(set.matrices.dynamicAlignment.toInt())   //one per dynamic descriptorSet
+                dynamicOffsets = intArrayOf(matrixIndex * layoutMVP.model.dynamicAlignment.toInt())
             )
 
             cb.drawIndexed(
@@ -148,14 +157,5 @@ class PipelineBasic(
             )
         }
 
-    }
-
-
-
-    fun destroy() {
-        device.device.destroy(graphicsPipeline)
-        OzVulkan.logger.info {
-            "${javaClass.name} destroyed"
-        }
     }
 }

@@ -31,6 +31,12 @@ class OzPipelineLayouts(val device: OzDevice, val descriptorSetLayouts: SetLayou
             pushConstantRanges = null
         )
     )
+    val mvp = device.device.createPipelineLayout(
+        createInfo = PipelineLayoutCreateInfo(
+            setLayouts = VkDescriptorSetLayout_Array(1) { descriptorSetLayouts.layout_mvp },
+            pushConstantRanges = null
+        )
+    )
 
 
     val pls = listOf(

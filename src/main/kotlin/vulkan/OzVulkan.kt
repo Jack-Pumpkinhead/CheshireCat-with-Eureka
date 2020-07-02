@@ -14,10 +14,10 @@ import vkk.vk10.structs.Extent2D
 import vulkan.command.CopyBuffer
 import vulkan.buffer.OzVMA
 import vulkan.command.DrawCmd
-import vulkan.drawing.DrawImage
 import vulkan.drawing.OzObjects
 import vulkan.image.OzImages
 import vulkan.pipelines.*
+import vulkan.pipelines.descriptor.LayoutMVP
 import vulkan.pipelines.descriptor.SetLayouts
 import vulkan.pipelines.pipelineLayout.OzUniformMatrixDynamic
 import vulkan.pipelines.pipelineLayout.OzPipelineLayouts
@@ -58,11 +58,12 @@ class OzVulkan(val univ: Univ, val window: OzWindow) {
     var pipelineLayouts:OzPipelineLayouts
     var uniformMatrixDynamic:OzUniformMatrixDynamic
     var dms: DMs
+    var layoutMVP:LayoutMVP
 
     init {
         //default name / destroyMethodName
         val mainBeans = beans {
-            bean<OzWindow> { window }
+//            bean<OzWindow> { window }
             bean<OzInstance>(destroyMethodName = "destroy")
             bean<OzSurface>(destroyMethodName = "destroy")
             bean<OzPhysicalDevices>()
@@ -93,6 +94,7 @@ class OzVulkan(val univ: Univ, val window: OzWindow) {
         val extraBeans = beans() {
             bean<OzObjects>()
             bean<DMs>()
+            bean<LayoutMVP>(destroyMethodName = "destroy")
 
         }
         mainBeans.initialize(context)
@@ -120,6 +122,7 @@ class OzVulkan(val univ: Univ, val window: OzWindow) {
         pipelineLayouts = context.getBean()
         uniformMatrixDynamic = context.getBean()
         dms = context.getBean()
+        layoutMVP = context.getBean()
 
     }
 
@@ -217,7 +220,7 @@ class OzVulkan(val univ: Univ, val window: OzWindow) {
 //            it.invoke()
 //        }
 
-        univ.event.afterRecreateSwapchain.send(windowSize)
+        univ.events.afterRecreateSwapchain.send(windowSize)
 //        swapchainContext.getBean<OzObjects>().getObjects().forEach {
 //            it.data.afterSwapchainRecreated()
 //        }

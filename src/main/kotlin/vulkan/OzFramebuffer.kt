@@ -34,8 +34,8 @@ class OzFramebuffer(
 
     //drawing on full size
     fun beginRenderPass_Full(cb: CommandBuffer) {
-        val depthStencilClearValue = ClearValue()
-        depthStencilClearValue.depth = 0.35f
+//        val depthStencilClearValue = ClearValue()
+//        depthStencilClearValue.depth = 0.35f      //自己写的bug2333
 
         cb.beginRenderPass(
             renderPassBegin = RenderPassBeginInfo(
@@ -47,9 +47,9 @@ class OzFramebuffer(
                 ),
                 clearValues = arrayOf(
                     ClearValue(0.0f, 0.0f, 0.0f, 1.0f),
-//                    ClearValue(1.0f, 0.0f, 0.0f, 0.0f)  //对应attachments
+                    ClearValue(1.0f, 0.0f, 0.0f, 0.0f)  //对应attachments
 //                    ClearDepthStencilValue(1)
-                    depthStencilClearValue
+//                    depthStencilClearValue
 
                 )
             ),

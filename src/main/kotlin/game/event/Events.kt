@@ -18,13 +18,36 @@ class Events {
     val onFrameStart = Event<FrameTick>()
     val onFrameEnd = Event<FrameTick>()
 
+    val windowResize = Event<WindowResize>()
+
+    val keyPress = Event<KeyPress>()
+    val keyRelease = Event<KeyRelease>()
+    val mouseEnter    = Event<MouseEnter   >()
+    val mouseExit     = Event<MouseExit    >()
+    val mouseMove     = Event<MouseMove    >()
+    val mousePress    = Event<MousePress   >()
+    val mouseRelease  = Event<MouseRelease >()
+    val mouseScroll   = Event<MouseScroll  >()
+
+    val descripterSetUpdate = Event<DescripterSetUpdate>()
+
 
     val events = listOf(
         perSecond,
         afterRecreateSwapchain,
         onTick,
         onFrameStart,
-        onFrameEnd
+        onFrameEnd,
+        windowResize,
+        keyPress,
+        keyRelease,
+        mouseEnter,
+        mouseExit,
+        mouseMove,
+        mousePress,
+        mouseRelease,
+        mouseScroll,
+        descripterSetUpdate
     )
 
     suspend fun launch(scope: CoroutineScope) {

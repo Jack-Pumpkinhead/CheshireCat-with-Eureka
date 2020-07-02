@@ -1,6 +1,7 @@
 package game.main
 
 import game.GameObjects
+import game.debug.DebugJFrame
 import game.entity.Emeralds
 import game.event.Events
 import game.input.GLSLoader
@@ -14,6 +15,7 @@ import game.window.OzWindow
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.TickerMode
 import kotlinx.coroutines.channels.ticker
+import math.matrix.Matrices
 import mu.KotlinLogging
 import org.springframework.beans.factory.getBean
 import org.springframework.context.support.GenericApplicationContext
@@ -42,10 +44,10 @@ class Univ(){
     val springInput: SpringInput
     val glsl:GLSLoader
     val emeralds:Emeralds
+    val events: Events
+
+
     val gameObjects:GameObjects
-
-
-    val event = Events()
 
     val window: OzWindow
     init {
@@ -64,15 +66,18 @@ class Univ(){
         window.installDefaultCallbacks()
 
         val beans = beans {
+            bean<OzWindow> { window }
             bean<SpringInput>()
             bean<GLSLoader>(destroyMethodName = "destroy")
             bean<Emeralds>()
+            bean<Events>()
         }
         beans.initialize(context)
         context.refresh()
         springInput = context.getBean()
         glsl = context.getBean()
         emeralds = context.getBean()
+        events = context.getBean()
         gameObjects = GameObjects(this)
 
 //        glsl.init()
@@ -87,10 +92,14 @@ class Univ(){
 
     val gameloop = Gameloop(this)
 
+    val matrices = Matrices(events,window, gameloop)
+
+    val debug: DebugJFrame = DebugJFrame(this)
+
     fun start() {
 
         runBlocking {
-            event.launch(scope)
+            events.launch(scope)
         }
 
         scope.launch {
@@ -98,7 +107,7 @@ class Univ(){
             var i = 0L
             while (isActive) {
                 ticker.receive()
-                event.perSecond.send(i)
+                events.perSecond.send(i)
                 i++
             }
         }
@@ -112,6 +121,7 @@ class Univ(){
 
 
         frameLoop.loop()
+        gameloop.stop()
     }
 
     fun destroy() {

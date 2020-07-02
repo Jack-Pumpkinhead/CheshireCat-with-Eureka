@@ -1,11 +1,12 @@
 package game.loop
 
+import game.event.DescripterSetUpdate
 import game.event.FrameTick
-import game.loop.TPSActor_old.Companion.getTPS
-import game.loop.TPSActor_old.Companion.record
 import game.main.Recorder2
+import game.main.Recorder3
 import game.main.Univ
 import game.window.OzWindow
+import glm_.mat4x4.Mat4
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Semaphore
 import mu.KotlinLogging
@@ -54,7 +55,7 @@ class FrameLoop(val univ: Univ, val window: OzWindow) {
 
     init {
         runBlocking {
-            univ.event.afterRecreateSwapchain.subscribe {
+            univ.events.afterRecreateSwapchain.subscribe {
                 makeConfigurations()
             }
             makeConfigurations()
@@ -64,17 +65,20 @@ class FrameLoop(val univ: Univ, val window: OzWindow) {
     val submit = Submit(univ.vulkan)
 //    val drawCmds = SyncArray<Recorder>()
     val drawCmds2 = SyncArray<Recorder2>()
+    val drawCmds3 = SyncArray<Recorder3>()
 
     fun loop() {
+/*
 
         scope.launch {
-            univ.event.perSecond.subscribe {
+            univ.events.perSecond.subscribe {
                 val fps = fps.getTPS()
                 logger.info {
                     "fps: $fps"
                 }
             }
         }
+*/
 
 
 
@@ -97,7 +101,7 @@ class FrameLoop(val univ: Univ, val window: OzWindow) {
 //                semaphore.withPermit {  //暂时单线程
 
             val tick = runBlocking { fps.record() }
-            runBlocking { univ.event.onFrameStart.send(FrameTick(tick, System.currentTimeMillis())) }
+            runBlocking { univ.events.onFrameStart.send(FrameTick(tick, System.currentTimeMillis())) }
 
 
             val aquireS = semas[tick.rem(size).toInt()]
@@ -123,7 +127,18 @@ class FrameLoop(val univ: Univ, val window: OzWindow) {
 
 
             runBlocking {
+
+
+                univ.events.descripterSetUpdate.send(DescripterSetUpdate(imageIndex))
                 univ.vulkan.dms.update(imageIndex)  //update before record
+
+                univ.vulkan.layoutMVP.proj.mat4 = univ.matrices.projPerspective.copy()
+//                univ.vulkan.layoutMVP.proj.mat4 = Mat4()
+//                univ.vulkan.layoutMVP.proj.mat4 = univ.matrices.projOrthogonal.mat
+                univ.vulkan.layoutMVP.view.mat4 = univ.matrices.fpv.getMatrix()
+                univ.vulkan.layoutMVP.update(imageIndex)
+
+
 
                 val cb = univ.vulkan.commandpools.graphicMutableCP.allocate().await()
 
@@ -134,6 +149,13 @@ class FrameLoop(val univ: Univ, val window: OzWindow) {
                         it(cb, univ.vulkan.dms.dmDescriptors[imageIndex])
                     }
                 }
+                drawCmds3.withLock {cmds->
+                    cmds.forEach {
+                        it(cb, imageIndex)
+                    }
+                }
+
+
                 fb.end(cb)
 
 
@@ -147,7 +169,7 @@ class FrameLoop(val univ: Univ, val window: OzWindow) {
 //                    val result = runBlocking { configurations[imageIndex].submit(aquireS)}
 
 
-            runBlocking { univ.event.onFrameEnd.send(FrameTick(tick, System.currentTimeMillis())) }
+            runBlocking { univ.events.onFrameEnd.send(FrameTick(tick, System.currentTimeMillis())) }
 
 //                }
 //            }

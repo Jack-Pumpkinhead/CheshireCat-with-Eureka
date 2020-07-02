@@ -30,6 +30,7 @@ class SetLayouts(val device: OzDevice) {
     val layout_0 = create(bindings = arrayOf(binding0))
 
     val layout_0_dynamic = create(bindings = arrayOf(binding0_dynamic))
+    val layout_mvp = create(bindings = arrayOf(binding0, binding1, binding2_dynamic))
 
     val mvp_samplerLayout = create(bindings = arrayOf(binding0, mvp0sampler1))
 

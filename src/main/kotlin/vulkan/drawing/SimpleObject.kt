@@ -44,7 +44,10 @@ class SimpleObject(val vulkan: OzVulkan) {
             +0.5f, +0.5f, +0f, 0f, 0f, 1f,
             -0.5f, +0.5f, +0f, 1f, 1f, 1f
         )
-
+//    ----x-->  clockwise
+//    |  0红   1绿
+//   y|  3蓝   2白
+//    ↓
         val indices = intArrayOf(
             0, 1, 2, 2, 3, 0
         )

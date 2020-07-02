@@ -1,5 +1,7 @@
 package game.main
 
+import glm_.detail.GLM_DEPTH_CLIP_SPACE
+import glm_.detail.GlmDepthClipSpace
 import mu.KotlinLogging
 import org.lwjgl.system.Checks
 import org.lwjgl.vulkan.EXTDebugUtils
@@ -43,6 +45,8 @@ object OzConstants {
         if (debug) {
             InstanceExtensions += EXTDebugUtils.VK_EXT_DEBUG_UTILS_EXTENSION_NAME
         }
+
+        GLM_DEPTH_CLIP_SPACE = GlmDepthClipSpace.ZERO_TO_ONE
     }
 
 }

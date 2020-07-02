@@ -4,7 +4,6 @@ import game.Primitive
 import game.main.Univ
 import glm_.mat4x4.Mat4
 import glm_.vec3.Vec3
-import kotlinx.coroutines.runBlocking
 import vulkan.drawing.BuildInData
 import vulkan.pipelines.PipelineBasic
 import kotlin.random.Random
@@ -13,6 +12,12 @@ import kotlin.random.Random
  * Created by CowardlyLion on 2020/6/27 23:12
  */
 class TestRectangle(univ: Univ):Primitive(univ) {
+
+    init {
+//        instantiate = true
+        instantiate = false
+//        active = false
+    }
 
     lateinit var obj1: PipelineBasic.ObjStatic
     lateinit var obj2: PipelineBasic.ObjStatic
@@ -37,7 +42,7 @@ class TestRectangle(univ: Univ):Primitive(univ) {
 
     var pos = Vec3(0,0,0.2f)
     //    var pos_ = Vec3(0,0,0f)
-    var pos2 = Vec3(0,0,0.4f)
+    var pos2 = Vec3(0,0,0.45f)  //why black on >=0.35f ?    //see OzFramebuffer
     //    var pos2_ = Vec3(0,0,0f)
     override suspend fun gameloop(tick: Long, timemillis: Long) {
         univ.vulkan.dms.dms.matrices.withLock { mats ->
@@ -49,6 +54,9 @@ class TestRectangle(univ: Univ):Primitive(univ) {
 //                pos_.plusAssign(pos)
 //                pos2.plusAssign(rnd(),0,0)
             pos2.plusAssign(0.003f, 0, -0.001f)
+//            Univ.logger.info {
+//                "pos2z: ${pos2.z}"
+//            }
 //                pos2_.plusAssign(pos)
             mats[1] = Mat4().translateAssign(
                 pos

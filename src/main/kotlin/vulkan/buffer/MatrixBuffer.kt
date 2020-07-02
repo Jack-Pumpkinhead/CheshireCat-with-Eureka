@@ -15,7 +15,7 @@ class MatrixBuffer(val vma: OzVMA) {
 
     val mat4 = Mat4()
     val bytes = 4 * 4 * Float.BYTES
-    val buffer = vma.of_uniform(bytes )
+    val buffer = vma.of_uniform(bytes)
 
     fun flush() {
         Stack { stack ->

@@ -36,7 +36,12 @@ class GameObjects(val univ: Univ) {
 
     init {
         runBlocking {
-            scan(arrayOf("land.Oz","land.Ev","land.Norm"))
+            scan(arrayOf(
+                "land.Oz",
+                "land.Ev",
+                "land.Norm",
+                "game.debug"
+            ))
         }
     }
 
@@ -52,7 +57,9 @@ class GameObjects(val univ: Univ) {
                 try {
                     val constructor = it.getConstructor(Univ::class.java)
                     val instance = constructor.newInstance(univ)
-                    primitives += instance
+                    if (instance.instantiate) {
+                        primitives += instance
+                    }
                 } catch (e: Exception) {
                     e.printStackTrace()
                     Univ.logger.info {

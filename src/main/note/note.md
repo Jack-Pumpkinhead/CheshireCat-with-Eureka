@@ -16,6 +16,8 @@
     
     name 'sampler' is reserved in glsl
     
+    奇怪的透视视角来源于60 RADIAN 的fov （而不是60 degree）
+    
     
 #### Todo list: 
     //use log4j2

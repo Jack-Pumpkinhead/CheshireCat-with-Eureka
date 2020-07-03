@@ -9,7 +9,7 @@ import vulkan.OzDevice
 import vulkan.OzRenderPasses
 import vulkan.OzVulkan
 import vulkan.pipelines.pipelineLayout.OzPipelineLayouts
-import vulkan.pipelines.vertexInput.Vertex_p3c3
+import vulkan.pipelines.vertexInput.VertexInput
 
 class OzGraphicPipelineHelloBuffer(
     val device: OzDevice,
@@ -94,7 +94,7 @@ class OzGraphicPipelineHelloBuffer(
 
         val graphicsPipelineCI = GraphicsPipelineCreateInfo(
             stages = arrayOf(shaderstageCI_vert, shaderstageCI_frag),
-            vertexInputState = Vertex_p3c3.inputState,
+            vertexInputState = VertexInput.P3C3,
             inputAssemblyState = inputAssemblyStateCI,
             viewportState = viewportSCI,
             rasterizationState = rasterizationSCI,

@@ -37,14 +37,26 @@ class OzPipelineLayouts(val device: OzDevice, val descriptorSetLayouts: SetLayou
             pushConstantRanges = null
         )
     )
+    val mvp_sampler = device.device.createPipelineLayout(
+        createInfo = PipelineLayoutCreateInfo(
+            setLayouts = VkDescriptorSetLayout_Array(
+                listOf(
+                    descriptorSetLayouts.layout_mvp,
+                    descriptorSetLayouts.layoutSampler
+                )
+            ),
+            pushConstantRanges = null
+        )
+    )
 
 
-    val pls = listOf(
-        empty, uniformSingle,uniformDynamic
+
+    val list = listOf(
+        empty, uniformSingle,uniformDynamic,mvp
     )
 
     fun destroy() {
-        pls.forEach {
+        list.forEach {
             device.device.destroy(it)
         }
         OzVulkan.logger.info {

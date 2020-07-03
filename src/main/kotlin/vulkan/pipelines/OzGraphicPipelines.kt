@@ -23,15 +23,15 @@ class OzGraphicPipelines(
     val hellomvp2 = OzGPUniformDynamic(device, shadermodule, pipelineLayouts, renderpass, 0, extent2D)
     val hellomvp3 = PipelineBasic(device, shadermodule, pipelineLayouts, renderpass, 0, extent2D)
     val hellomvp4 = PipelineBasic2(device, shadermodule, pipelineLayouts, renderpass, 0, extent2D)
-    val helloSampler = GPTextured(device, shadermodule, pipelineLayouts, renderpass, 0, extent2D)
-    val hellodepth = GPTexturedDepth(device, shadermodule, pipelineLayouts, renderpass, 0, extent2D)
+//    val helloSampler = GPTextured(device, shadermodule, pipelineLayouts, renderpass, 0, extent2D)
+    val hellotexture = PipelineTextured(device, shadermodule, pipelineLayouts, renderpass, 0, extent2D)
 
 
     fun destroy() {
         hellobuffer.destroy()
         hellomvp.destroy()
         hellomvp2.destroy()
-        helloSampler.destroy()
+//        helloSampler.destroy()
         OzVulkan.logger.info {
             "graphicPipelines destroyed"
         }

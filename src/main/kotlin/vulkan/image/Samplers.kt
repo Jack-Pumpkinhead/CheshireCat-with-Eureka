@@ -20,6 +20,8 @@ class Samplers(val device: OzDevice) {
             addressModeW = VkSamplerAddressMode.REPEAT,
             anisotropyEnable = true,
             maxAnisotropy = 16f,    //1.0f if anisotropyEnable is false
+//            anisotropyEnable = false,
+//            maxAnisotropy = 1f,    //1.0f if anisotropyEnable is false
             borderColor = VkBorderColor.INT_OPAQUE_BLACK,
             unnormalizedCoordinates = false,
             compareEnable = false,
@@ -30,6 +32,29 @@ class Samplers(val device: OzDevice) {
             maxLod = 0f
         )
     )
+    val samplerNearest = device.device.createSampler(
+        SamplerCreateInfo(
+            flags = VkSamplerCreate(0).i,
+            magFilter = VkFilter.NEAREST,
+            minFilter = VkFilter.NEAREST,
+            addressModeU = VkSamplerAddressMode.REPEAT,
+            addressModeV = VkSamplerAddressMode.REPEAT,
+            addressModeW = VkSamplerAddressMode.REPEAT,
+//            anisotropyEnable = true,
+//            maxAnisotropy = 16f,    //1.0f if anisotropyEnable is false
+            anisotropyEnable = false,
+            maxAnisotropy = 1f,    //1.0f if anisotropyEnable is false
+            borderColor = VkBorderColor.INT_OPAQUE_BLACK,
+            unnormalizedCoordinates = false,
+            compareEnable = false,
+            compareOp = VkCompareOp.ALWAYS,
+            mipmapMode = VkSamplerMipmapMode.NEAREST,
+            mipLodBias = 0f,
+            minLod = 0f,
+            maxLod = 0f
+        )
+    )
+
 
     fun destroy() {
         device.device.destroy(sampler)

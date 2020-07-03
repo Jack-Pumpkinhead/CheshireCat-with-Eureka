@@ -1,6 +1,7 @@
 package vulkan.pipelines
 
 import game.main.Recorder3
+import game.main.Univ
 import kool.BYTES
 import kool.Stack
 import kotlinx.coroutines.runBlocking
@@ -19,13 +20,14 @@ import vulkan.buffer.OzVMA
 import vulkan.buffer.VmaBuffer
 import vulkan.command.CopyBuffer
 import vulkan.pipelines.descriptor.LayoutMVP
+import vulkan.pipelines.descriptor.TextureSets
 import vulkan.pipelines.pipelineLayout.OzPipelineLayouts
 import vulkan.pipelines.vertexInput.VertexInput
 
 /**
- * Created by CowardlyLion on 2020/6/28 22:08
+ * Created by CowardlyLion on 2020/6/3 19:23
  */
-class PipelineBasic2 (
+class PipelineTextured(
     val device: OzDevice,
     shadermodule: OzShaderModules,
     pipelineLayouts: OzPipelineLayouts,
@@ -33,16 +35,19 @@ class PipelineBasic2 (
     subpass: Int = 0,
     extent2D: Extent2D
 ) {
+
     val graphicsPipeline: VkPipeline
-    val layout = pipelineLayouts.mvp
+    val layout = pipelineLayouts.mvp_sampler
 
     init {
+
+
         val graphicsPipelineCI = GraphicsPipelineCreateInfo(
             stages = arrayOf(
-                shadermodule.getPipelineShaderStageCI("hellomvp4.vert"),
-                shadermodule.getPipelineShaderStageCI("basic.frag")
+                shadermodule.getPipelineShaderStageCI("hellosampler2.vert"),
+                shadermodule.getPipelineShaderStageCI("hellosampler2.frag")
             ),
-            vertexInputState = VertexInput.P3C3,
+            vertexInputState = VertexInput.P3T2,
             inputAssemblyState = inputAssemblyStateCI,
             viewportState = viewportState(extent2D),
             rasterizationState = rasterizationSCI,
@@ -52,7 +57,6 @@ class PipelineBasic2 (
             dynamicState = null,
             layout = layout,
             renderPass = renderPasses.renderpass_depth,
-//            renderPass = renderPasses.renderpass,
             subpass = subpass,
             basePipelineHandle = VkPipeline.NULL,
             basePipelineIndex = -1
@@ -62,7 +66,11 @@ class PipelineBasic2 (
             pipelineCache = VkPipelineCache.NULL,
             createInfo = graphicsPipelineCI
         )
+
     }
+
+
+
     fun destroy() {
         device.device.destroy(graphicsPipeline)
         OzVulkan.logger.info {
@@ -71,16 +79,35 @@ class PipelineBasic2 (
     }
 
     class ObjStatic(
-//        val vulkan: OzVulkan,
         val vma: OzVMA,
         val copyBuffer: CopyBuffer,
-        val pipeline:PipelineBasic2,
+        val pipeline:PipelineTextured,
         val layoutMVP: LayoutMVP,
-        val vert_color: FloatArray,
+        val pos_texCoord: FloatArray,
         val indices: IntArray,
-        var matrixIndex: Int
+        var matrixIndex: Int,
+        var texIndex:Int,
+        val textureSets: TextureSets
     ) {
-        val vbytes = vert_color.size * Float.BYTES
+        constructor(
+            univ: Univ, pos_texCoord: FloatArray,
+            indices: IntArray,
+            matrixIndex: Int,
+            texIndex: Int
+        ) : this(
+            vma = univ.vulkan.vma,
+            pipeline = univ.vulkan.graphicPipelines.hellotexture,
+            copyBuffer = univ.vulkan.copybuffer,
+            layoutMVP = univ.vulkan.layoutMVP,
+            pos_texCoord = pos_texCoord,
+            indices = indices,
+            matrixIndex = matrixIndex,
+            texIndex = texIndex,
+            textureSets = univ.vulkan.textureSets
+        )
+
+
+        val vbytes = pos_texCoord.size * Float.BYTES
         val ibytes = indices.size * Int.BYTES
 
 
@@ -94,7 +121,7 @@ class PipelineBasic2 (
 
             Stack {
                 vertexBuffer.memory.fill(
-                    it.mallocFloat(vert_color.size).put(vert_color).flip()
+                    it.mallocFloat(pos_texCoord.size).put(pos_texCoord).flip()
                 )
                 indexBuffer.memory.fill(
                     it.mallocInt(indices.size).put(indices).flip()
@@ -142,7 +169,7 @@ class PipelineBasic2 (
                 layout = pipeline.layout,
                 firstSet = 0,
                 descriptorSets = VkDescriptorSet_Array(
-                    listOf(layoutMVP.sets[imageIndex])
+                    listOf(layoutMVP.sets[imageIndex], textureSets.sets[texIndex])
                 ),
                 dynamicOffsets = intArrayOf(matrixIndex * layoutMVP.model.dynamicAlignment.toInt())
             )
@@ -157,4 +184,6 @@ class PipelineBasic2 (
         }
 
     }
+
+
 }

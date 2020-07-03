@@ -27,12 +27,20 @@ class SetLayouts(val device: OzDevice) {
     }
 
 
-    val layout_0 = create(bindings = arrayOf(binding0))
+    val layout_0 = create(bindings = arrayOf(bindingV0))
 
-    val layout_0_dynamic = create(bindings = arrayOf(binding0_dynamic))
-    val layout_mvp = create(bindings = arrayOf(binding0, binding1, binding2_dynamic))
+    val layout_0_dynamic = create(bindings = arrayOf(bindingV0_dynamic))
+    val layout_mvp = create(bindings = arrayOf(
+        bindingV0, bindingV1, bindingV2_dynamic
+    ))
 
-    val mvp_samplerLayout = create(bindings = arrayOf(binding0, mvp0sampler1))
+    @Deprecated("ddd")
+    val mvp_samplerLayout = create(bindings = arrayOf(
+        bindingV0, bindingF0sampler
+    ))
+    val layoutSampler = create(bindings = arrayOf(
+        bindingF0sampler
+    ))
 
 
     fun destroy() {

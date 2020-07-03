@@ -1,11 +1,11 @@
 package vulkan.image
 
-import game.input.LoadImages
 import game.input.SpringInput
+import game.main.Univ
 import kotlinx.coroutines.runBlocking
 import vkk.*
 import vkk.entities.VkImageView
-import vkk.vk10.createImageView
+import vkk.entities.VkSampler
 import vkk.vk10.structs.*
 import vulkan.*
 import vulkan.buffer.OzVMA
@@ -20,9 +20,20 @@ class OzImage(
     val commandPools: OzCommandPools,
     val queues: OzQueues,
     val ozImageViews: OzImageViews,
+    val springInput: SpringInput,
     val path: String,
-    val springInput: SpringInput
+    val sampler: VkSampler
 ) {
+    constructor(univ:Univ,path: String,sampler: VkSampler):this(
+        univ.vulkan.vma,
+        univ.vulkan.device,
+        univ.vulkan.commandpools,
+        univ.vulkan.queues,
+        univ.vulkan.imageViews,
+        univ.springInput,
+        path,
+        sampler
+    )
 
     val image: VmaImage
     val imageView: VkImageView
@@ -32,7 +43,7 @@ class OzImage(
         image = runBlocking {
             getImage(path)
         }
-        imageView = ozImageViews.createColor(image.vkImage, VkFormat.B8G8R8A8_SRGB)
+        imageView = ozImageViews.createColor(image.vkImage, VkFormat.R8G8B8A8_SRGB)
     }
 
     private suspend fun getImage(path: String): VmaImage {
@@ -45,7 +56,8 @@ class OzImage(
         buffer.memory.fill(texture.data())
 
         val image = vma.createImage_deviceLocal_dstsampled(
-            VkFormat.B8G8R8A8_SRGB,
+//            VkFormat.B8G8R8A8_SRGB,   //?????BGRA
+            VkFormat.R8G8B8A8_SRGB,
             Extent3D(texture.extent().x, texture.extent().y, texture.extent().z)
         )
 

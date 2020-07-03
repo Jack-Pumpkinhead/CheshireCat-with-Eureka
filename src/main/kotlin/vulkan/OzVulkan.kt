@@ -16,9 +16,11 @@ import vulkan.buffer.OzVMA
 import vulkan.command.DrawCmd
 import vulkan.drawing.OzObjects
 import vulkan.image.OzImages
+import vulkan.image.Samplers
 import vulkan.pipelines.*
 import vulkan.pipelines.descriptor.LayoutMVP
 import vulkan.pipelines.descriptor.SetLayouts
+import vulkan.pipelines.descriptor.TextureSets
 import vulkan.pipelines.pipelineLayout.OzUniformMatrixDynamic
 import vulkan.pipelines.pipelineLayout.OzPipelineLayouts
 import vulkan.util.DMs
@@ -59,6 +61,8 @@ class OzVulkan(val univ: Univ, val window: OzWindow) {
     var uniformMatrixDynamic:OzUniformMatrixDynamic
     var dms: DMs
     var layoutMVP:LayoutMVP
+    var samplers:Samplers
+    var textureSets:TextureSets
 
     init {
         //default name / destroyMethodName
@@ -75,7 +79,6 @@ class OzVulkan(val univ: Univ, val window: OzWindow) {
             bean<CopyBuffer>()
 
             bean<OzVMA>(destroyMethodName = "destroy")
-            bean<OzImages>(destroyMethodName = "destroy")
 
             bean<OzImageViews>()
 
@@ -95,6 +98,10 @@ class OzVulkan(val univ: Univ, val window: OzWindow) {
             bean<OzObjects>()
             bean<DMs>()
             bean<LayoutMVP>(destroyMethodName = "destroy")
+            bean<Samplers>(destroyMethodName = "destroy")
+            bean<OzImages>(destroyMethodName = "destroy")
+
+            bean<TextureSets>(destroyMethodName = "destroy")
 
         }
         mainBeans.initialize(context)
@@ -114,7 +121,6 @@ class OzVulkan(val univ: Univ, val window: OzWindow) {
         copybuffer = context.getBean()
 
         vma = context.getBean()
-        images = context.getBean()
         imageViews = context.getBean()
         shadermodules = context.getBean()
         seyLayouts = context.getBean()
@@ -123,6 +129,9 @@ class OzVulkan(val univ: Univ, val window: OzWindow) {
         uniformMatrixDynamic = context.getBean()
         dms = context.getBean()
         layoutMVP = context.getBean()
+        samplers = context.getBean()
+        images = context.getBean()
+        textureSets = context.getBean()
 
     }
 

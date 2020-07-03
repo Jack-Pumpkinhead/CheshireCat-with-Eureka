@@ -16,11 +16,16 @@ class OzImages(
     val commandPools: OzCommandPools,
     val queues: OzQueues,
     val ozImageViews: OzImageViews,
-    val springInput: SpringInput
+    val springInput: SpringInput,
+    val samplers: Samplers
 ) {
 
-    val image = OzImage(vma, device, commandPools, queues, ozImageViews, "textures\\crafting_table.png", springInput)
+    val image = OzImage(
+        vma, device, commandPools, queues, ozImageViews, springInput,
+        "textures\\crafting_table.png", samplers.samplerNearest
+    )
 
+    val list = listOf(image)
 
 
 

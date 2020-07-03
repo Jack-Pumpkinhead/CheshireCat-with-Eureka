@@ -8,7 +8,7 @@ import vulkan.OzDevice
 import vulkan.OzRenderPasses
 import vulkan.OzVulkan
 import vulkan.pipelines.pipelineLayout.OzPipelineLayouts
-import vulkan.pipelines.vertexInput.Vertex_p3c3
+import vulkan.pipelines.vertexInput.VertexInput
 
 /**
  * Created by CowardlyLion on 2020/5/10 21:43
@@ -31,7 +31,7 @@ class OzGPUniformDynamic(
             stages = arrayOf(shadermodule.getPipelineShaderStageCI("hellomvp2.vert"),
                 shadermodule.getPipelineShaderStageCI("basic.frag")
             ),
-            vertexInputState = Vertex_p3c3.inputState,
+            vertexInputState = VertexInput.P3C3,
             inputAssemblyState = inputAssemblyStateCI,
             viewportState = viewportState(extent2D),
             rasterizationState = rasterizationSCI,

@@ -17,7 +17,7 @@ import vulkan.OzRenderPasses
 import vulkan.OzVulkan
 import vulkan.buffer.VmaBuffer
 import vulkan.pipelines.pipelineLayout.OzPipelineLayouts
-import vulkan.pipelines.vertexInput.Vertex_p3c3
+import vulkan.pipelines.vertexInput.VertexInput
 
 /**
  * Created by CowardlyLion on 2020/6/15 21:09
@@ -42,7 +42,7 @@ class PipelineBasic(
                 shadermodule.getPipelineShaderStageCI("hellomvp3.vert"),
                 shadermodule.getPipelineShaderStageCI("basic.frag")
             ),
-            vertexInputState = Vertex_p3c3.inputState,
+            vertexInputState = VertexInput.P3C3,
             inputAssemblyState = inputAssemblyStateCI,
             viewportState = viewportState(extent2D),
             rasterizationState = rasterizationSCI,

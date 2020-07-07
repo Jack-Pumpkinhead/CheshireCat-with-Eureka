@@ -28,7 +28,7 @@ class SingleParticle(
             for (force in forces) {
                 f.plusAssign(force(this))
             }
-            f.div(m, a)
+            f.div(m, a) //a = f/m
             v.plusAssign(a.times(dt))
             p.plusAssign(v.times(dt))
         }

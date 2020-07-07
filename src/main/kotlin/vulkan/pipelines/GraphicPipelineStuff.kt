@@ -8,10 +8,15 @@ import vkk.vk10.structs.*
  * Created by CowardlyLion on 2020/6/3 19:25
  */
 
-val inputAssemblyStateCI = PipelineInputAssemblyStateCreateInfo(
+val TriangleList = PipelineInputAssemblyStateCreateInfo(
     topology = VkPrimitiveTopology.TRIANGLE_LIST,
     primitiveRestartEnable = false
 )
+val LineList = PipelineInputAssemblyStateCreateInfo(
+    topology = VkPrimitiveTopology.LINE_LIST,
+    primitiveRestartEnable = false
+)
+
 fun viewport(extent2D: Extent2D) = Viewport(
     x = 0.0f,
     y = 0.0f,

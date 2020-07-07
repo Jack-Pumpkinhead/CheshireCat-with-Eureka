@@ -32,7 +32,7 @@ class OzGPUniformDynamic(
                 shadermodule.getPipelineShaderStageCI("basic.frag")
             ),
             vertexInputState = VertexInput.P3C3,
-            inputAssemblyState = inputAssemblyStateCI,
+            inputAssemblyState = TriangleList,
             viewportState = viewportState(extent2D),
             rasterizationState = rasterizationSCI,
             multisampleState = multisampleSCI,

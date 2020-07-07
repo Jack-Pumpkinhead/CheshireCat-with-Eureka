@@ -3,11 +3,10 @@ package math.matrix
 import game.event.Events
 import game.loop.TickableTS
 import game.window.OzWindow
-import glm_.glm
 import glm_.mat4x4.Mat4
 import glm_.vec3.Vec3
 import kotlinx.coroutines.sync.withLock
-import math.vector.DragForce
+import physics.DragForce
 import math.vector.MouseRotation3f
 import physics.SingleParticle
 import uno.glfw.Key
@@ -27,7 +26,8 @@ class FirstPersonView(
     val pos: SingleParticle = SingleParticle(p, v, dt = dt)
     val mouseRotation = MouseRotation3f(rot, events = events, window = window)
 
-    val drag = DragForce({1F}, {Vec3()}, { if (window.pressed(Key.LEFT_SHIFT)) 7F else 3F})
+    val drag =
+        DragForce({ 1F }, { Vec3() }, { if (window.pressed(Key.LEFT_SHIFT)) 7F else 3F })
 
     init {
 //        runBlocking {

@@ -48,7 +48,7 @@ class PipelineTextured(
                 shadermodule.getPipelineShaderStageCI("hellosampler2.frag")
             ),
             vertexInputState = VertexInput.P3T2,
-            inputAssemblyState = inputAssemblyStateCI,
+            inputAssemblyState = TriangleList,
             viewportState = viewportState(extent2D),
             rasterizationState = rasterizationSCI,
             multisampleState = multisampleSCI,

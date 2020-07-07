@@ -5,7 +5,7 @@ package math.category
  */
 class FinCategory(
     val objs: Int,
-    val arrows: Int,    // [-objs, -1] is id
+    val arrows: Int,    //extra arrows, [-objs, -1] is id
     val s: IntArray,
     val t: IntArray,
     val comp: List<IntArray>
@@ -24,10 +24,8 @@ class FinCategory(
             else -> comp[g][f]
         }
     }
-    fun source(f:Int): Int {
-        return if (f < 0) -f - 1 else s[f]
-    }
-    fun target(f:Int) = t[f]
+    fun source(f:Int): Int = if (f < 0) -f - 1 else s[f]
+    fun target(f:Int): Int = if (f < 0) -f - 1 else t[f]
     fun composible(g: Int, f: Int):Boolean {
         return source(g) == target(f)
     }

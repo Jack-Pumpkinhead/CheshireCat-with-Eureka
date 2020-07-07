@@ -23,9 +23,9 @@ import vulkan.pipelines.pipelineLayout.OzPipelineLayouts
 import vulkan.pipelines.vertexInput.VertexInput
 
 /**
- * Created by CowardlyLion on 2020/6/28 22:08
+ * Created by CowardlyLion on 2020/7/6 18:17
  */
-class PipelineBasic2 (
+class PipelineLine (
     val device: OzDevice,
     shadermodule: OzShaderModules,
     pipelineLayouts: OzPipelineLayouts,
@@ -43,7 +43,7 @@ class PipelineBasic2 (
                 shadermodule.getPipelineShaderStageCI("basic.frag")
             ),
             vertexInputState = VertexInput.P3C3,
-            inputAssemblyState = TriangleList,
+            inputAssemblyState = LineList,
             viewportState = viewportState(extent2D),
             rasterizationState = rasterizationSCI,
             multisampleState = multisampleSCI,

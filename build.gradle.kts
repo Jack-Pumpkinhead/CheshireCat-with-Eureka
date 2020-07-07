@@ -210,7 +210,7 @@ dependencies {
     implementation("org.reflections", "reflections", "0.9.12")
 
     implementation("io.github.libktx:ktx-freetype:1.9.10-b6")
-
+    implementation("com.badlogicgames.gdx:gdx:1.9.10")
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {

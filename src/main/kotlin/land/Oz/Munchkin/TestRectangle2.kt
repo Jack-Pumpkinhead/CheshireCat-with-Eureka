@@ -18,6 +18,8 @@ class TestRectangle2(univ: Univ): Primitive(univ) {
     init {
 //        instantiate = false
 //        active = false
+
+
     }
 
     override suspend fun initialize() {

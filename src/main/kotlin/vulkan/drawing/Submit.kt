@@ -17,7 +17,7 @@ class Submit(val vulkan: OzVulkan) {
 
     val submitS = vulkan.device.semaphore()
 
-    suspend fun submit(commandBuffer: CommandBuffer, acquiredS: VkSemaphore, index:Int): Boolean {
+    suspend fun submit_present(commandBuffer: CommandBuffer, acquiredS: VkSemaphore, index:Int): Boolean {
 
         val submitInfo = SubmitInfo(
             waitSemaphoreCount = 1,

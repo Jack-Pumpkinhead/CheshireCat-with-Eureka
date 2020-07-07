@@ -4,10 +4,13 @@ import assimp.AiNode
 import assimp.AiPostProcessStep
 import assimp.Importer
 import assimp.or
+import com.badlogic.gdx.assets.AssetManager
 import game.entity.Emerald
 import game.entity.EntityNode
 import gli_.Texture
 import gli_.gli
+import ktx.freetype.loadFreeTypeFont
+import ktx.freetype.registerFreeTypeFontLoaders
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.core.io.ResourceLoader
 import org.springframework.stereotype.Component
@@ -71,6 +74,17 @@ class SpringInput(val resourceLoader: ResourceLoader) {
         return emerald
     }
 
+
+    fun loadFont(path: String) {
+        val asset = AssetManager()
+        asset.registerFreeTypeFontLoaders()
+        val fft = asset.loadFreeTypeFont(url(path).file){
+
+        }
+//        FreeTypeFontGenerator
+
+
+    }
 
 
 

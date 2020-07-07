@@ -6,7 +6,6 @@ import game.main.Recorder2
 import game.main.Recorder3
 import game.main.Univ
 import game.window.OzWindow
-import glm_.mat4x4.Mat4
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Semaphore
 import mu.KotlinLogging
@@ -17,6 +16,7 @@ import vkk.entities.VkFence
 import vkk.extensions.acquireNextImageKHR
 import vulkan.*
 import vulkan.concurrent.SyncArray
+import vulkan.drawing.ObjDynamic
 import vulkan.drawing.PerImageConfiguration
 import vulkan.drawing.Submit
 
@@ -66,6 +66,7 @@ class FrameLoop(val univ: Univ, val window: OzWindow) {
 //    val drawCmds = SyncArray<Recorder>()
     val drawCmds2 = SyncArray<Recorder2>()
     val drawCmds3 = SyncArray<Recorder3>()
+    val dynamicObjs = SyncArray<ObjDynamic>()
 
     fun loop() {
 /*
@@ -155,11 +156,22 @@ class FrameLoop(val univ: Univ, val window: OzWindow) {
                     }
                 }
 
+                //question: what acturally done when updating descriptor sets?  (in cmd record)
+                //bind vertex buffer,  need to lock until draw complete?    //update before record
+                dynamicObjs.withLockS {objs->
+                    objs.forEach {
+                        it.update()
+                    }
+                    objs.forEach {
+                        it.record(cb, imageIndex)
+                    }
+                }
+
 
                 fb.end(cb)
 
 
-                val success = submit.submit(cb, aquireS, imageIndex)
+                val success = submit.submit_present(cb, aquireS, imageIndex)
                 if (!success) {
                     univ.vulkan.shouldRecreate = true
                 }

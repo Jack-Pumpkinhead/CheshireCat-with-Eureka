@@ -79,6 +79,14 @@ class OzVMA(
         VkMemoryProperty.HOST_COHERENT_BIT.i,
         Vma.VMA_MEMORY_USAGE_CPU_ONLY
     )
+    fun vertexBuffer(bytes: Int) = create(
+        bytes.L,
+        VkBufferUsage.VERTEX_BUFFER_BIT.i,
+        VkMemoryProperty.HOST_VISIBLE_BIT.i,
+        VkMemoryProperty.HOST_COHERENT_BIT.i,
+        Vma.VMA_MEMORY_USAGE_CPU_TO_GPU
+    )
+
 
     fun createBuffer_indexStaging(bytes: Int) = create(
         bytes.L,
@@ -87,6 +95,14 @@ class OzVMA(
         VkMemoryProperty.HOST_COHERENT_BIT.i,
         Vma.VMA_MEMORY_USAGE_CPU_ONLY
     )
+    fun indexBuffer(bytes: Int) = create(
+        bytes.L,
+        VkBufferUsage.INDEX_BUFFER_BIT.i,
+        VkMemoryProperty.HOST_VISIBLE_BIT.i,
+        VkMemoryProperty.HOST_COHERENT_BIT.i,
+        Vma.VMA_MEMORY_USAGE_CPU_TO_GPU
+    )
+
 
 
     suspend fun to_VertexBuffer_device_local(arr: FloatArray, copyBuffer: CopyBuffer): VmaBuffer {
@@ -205,7 +221,7 @@ class OzVMA(
     ): VmaImage = Stack {
         val extent3D = VkExtent3D.mallocStack(it).set(extent.width, extent.height, extent.depth)
         val queuefamilyIndices = if (queueFamilyIndices != null) {
-            it.mallocInt(queueFamilyIndices!!.size).put(queueFamilyIndices).flip()
+            it.mallocInt(queueFamilyIndices.size).put(queueFamilyIndices).flip()
         } else null
         val imageCreateInfo = VkImageCreateInfo.mallocStack(it).set(
             VkStructureType.IMAGE_CREATE_INFO.i,

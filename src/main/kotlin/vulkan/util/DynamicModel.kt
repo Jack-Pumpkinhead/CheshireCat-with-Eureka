@@ -35,6 +35,11 @@ class DynamicModel(val vma: OzVMA, physicalDevice: OzPhysicalDevice) {
         val index = matrices.assign(Mat4())
         return Model(mats = matrices, index = index)
     }
+    /*suspend fun fetch(mat: Mat4): Model {
+        val index = matrices.assign(mat)
+        return Model(mats = matrices, index = index)
+    }*/
+
 
     suspend fun flush():Int {
         return matrices.withLockR {mats->
@@ -43,7 +48,15 @@ class DynamicModel(val vma: OzVMA, physicalDevice: OzPhysicalDevice) {
             buffer.destroy()
             buffer = vma.of_uniform(dynamicAlignment.toInt() * mats.size)
 
-            Stack { stack ->
+            var adr = buffer.memory.map()
+            mats.forEach {
+                Stack { stack ->
+                    val model = it.toFloatBuffer(stack)
+                    memCopy(model.adr, adr, VkDeviceSize(model.remSize))
+                    adr += dynamicAlignment
+                }
+            }
+            /*Stack { stack ->
                 var adr = buffer.memory.map()
                 mats.forEach {
                     val model = it.toFloatBuffer(stack)
@@ -52,6 +65,8 @@ class DynamicModel(val vma: OzVMA, physicalDevice: OzPhysicalDevice) {
 
                 }
             }
+            */
+
 //            buffer.memory.flush()
             mats.size
         }

@@ -9,8 +9,8 @@ import vulkan.concurrent.SyncArray
  * Created by CowardlyLion on 2020/6/29 19:00
  */
 class Model(
-    val pos: Vec3 = Vec3(),
-    val rot: Vec3 = Vec3(),
+    var pos: Vec3 = Vec3(),
+    var rot: Vec3 = Vec3(),
     var scale: Float = 1F,
     val mats: SyncArray<Mat4>,
     val index: Int
@@ -36,6 +36,10 @@ class Model(
         mats.withLock {
             it[index] = mat
         }
+    }
+
+    suspend fun destroy() {
+        mats.recycle(index)
     }
 
 

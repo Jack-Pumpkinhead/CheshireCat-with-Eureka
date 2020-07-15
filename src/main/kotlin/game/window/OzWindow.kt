@@ -1,7 +1,6 @@
 package game.window
 
 import game.event.*
-import game.input.KeyMap
 import game.main.Univ
 import glm_.vec2.Vec2
 import glm_.vec2.Vec2i

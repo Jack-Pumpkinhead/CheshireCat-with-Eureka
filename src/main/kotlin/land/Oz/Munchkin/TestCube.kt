@@ -14,8 +14,10 @@ class TestCube(univ: Univ) : Primitive(univ) {
     lateinit var cube: PipelineTextured.ObjStatic
     lateinit var model0: Model
 
+
+    val crafting_table = univ.emeralds.get("crafting_table.dae")!!
     override suspend fun initialize() {
-        val node = univ.emeralds.crafting_table.structure.nodes().find {
+        val node = crafting_table.structure.nodes().find {
             it.name == "Cube"
         }!!
 
@@ -29,7 +31,7 @@ class TestCube(univ: Univ) : Primitive(univ) {
             texIndex = 0,
             matrixIndex = model0.index,
             indices = mesh.indices.toIntArray(),
-            pos_texCoord = join(mesh.vertex, mesh.texCoord)
+            pos_texCoord = join(mesh.vertex, mesh.texCoord(0))
         )
         univ.frameLoop.drawCmds3.withLockS { cmds ->
             cmds.add(cube.recorder)

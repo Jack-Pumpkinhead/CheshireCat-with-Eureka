@@ -8,6 +8,7 @@ import game.main.Univ
 import game.window.OzWindow
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withLock
 import mu.KotlinLogging
 import org.springframework.beans.factory.getBean
 import uno.glfw.glfw
@@ -19,6 +20,7 @@ import vulkan.concurrent.SyncArray
 import vulkan.drawing.ObjDynamic
 import vulkan.drawing.PerImageConfiguration
 import vulkan.drawing.Submit
+import vulkan.pipelines.PipelineTextured
 
 class FrameLoop(val univ: Univ, val window: OzWindow) {
 
@@ -33,9 +35,9 @@ class FrameLoop(val univ: Univ, val window: OzWindow) {
 //    val prepareChannel = BroadcastChannel<Preparation>()
 // use actor + action collection
 
-    lateinit var configurations: List<PerImageConfiguration>
+//    lateinit var configurations: List<PerImageConfiguration>
 
-    suspend fun makeConfigurations() {
+    /*suspend fun makeConfigurations() {
         val ctx = univ.vulkan.swapchainContext
         val swapchain = ctx.getBean<OzSwapchain>()
         val commandPools = ctx.getBean<OzCommandPools>()
@@ -46,27 +48,28 @@ class FrameLoop(val univ: Univ, val window: OzWindow) {
                 ctx.getBean<OzFramebuffers>().fb_depth[index], ctx.getBean(), swapchain, ctx.getBean(), ctx.getBean()
             )
         }
-    }
+    }*/
 
 
     val size = univ.vulkan.swapchain.images.size
-    val semaphore = Semaphore(size)
+//    val semaphore = Semaphore(size)
     var semas = List(size) { univ.vulkan.device.semaphore() }
 
-    init {
+    /*init {
         runBlocking {
             univ.events.afterRecreateSwapchain.subscribe {
                 makeConfigurations()
             }
             makeConfigurations()
         }
-    }
+    }*/
 
     val submit = Submit(univ.vulkan)
 //    val drawCmds = SyncArray<Recorder>()
     val drawCmds2 = SyncArray<Recorder2>()
     val drawCmds3 = SyncArray<Recorder3>()
     val dynamicObjs = SyncArray<ObjDynamic>()
+    val multiObject = SyncArray<PipelineTextured.MultiObject>()
 
     fun loop() {
 /*
@@ -122,7 +125,7 @@ class FrameLoop(val univ: Univ, val window: OzWindow) {
 
             if (!success) {
                 univ.vulkan.shouldRecreate = true
-
+                continue
             }
 
 
@@ -164,6 +167,17 @@ class FrameLoop(val univ: Univ, val window: OzWindow) {
                     }
                     objs.forEach {
                         it.record(cb, imageIndex)
+                    }
+                }
+
+                univ.objects.mutex.withLock {
+                    univ.objects.textured.forEach { obj ->
+                        obj.record(cb, imageIndex)
+                    }
+                }
+                multiObject.withLockS {mObjs->
+                    mObjs.forEach {mObj->
+                        mObj.record(cb, imageIndex)
                     }
                 }
 

@@ -13,7 +13,10 @@ class EntityNode(val name:String,val transform: Mat4 = Mat4(), val meshes: List<
         aiNode.name,
         aiNode.transformation,
         aiNode.meshes.map { index -> Mesh(meshes[index]) }
-    )
+    ){
+//        aiNode.
+    }
+
 
 
 }

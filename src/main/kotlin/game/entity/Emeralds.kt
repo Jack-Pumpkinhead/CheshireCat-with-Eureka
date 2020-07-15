@@ -1,23 +1,52 @@
 package game.entity
 
-import game.input.LoadModel
 import game.input.SpringInput
 import game.main.Univ
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Mutex
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Created by CowardlyLion on 2020/6/3 21:12
  */
 class Emeralds(val springInput: SpringInput) {
 
-    val crafting_table = springInput.loadModel("model\\crafting_table.dae")
+    val list = mutableListOf<Emerald>()
+    val map = ConcurrentHashMap<String, Emerald>()
 
 
-    val list = listOf(crafting_table)
+    private fun put(name: String): Emerald {
+        val emerald = springInput.loadModel("model\\$name")!!
+        list += emerald
+        map[name] = emerald
+        return emerald
+    }
+
+    fun get(name: String): Emerald? {
+        return if (map.contains(name)) {
+            map[name]
+        } else {
+            val model = springInput.loadModel("model\\$name")
+            if (model == null) {
+                Univ.logger.error {
+                    "model not found: $name"
+                }
+                null
+            } else {
+                map[name] = model
+                model
+            }
+        }
+    }
+
+    val crafting_table = put("crafting_table.dae")
+    val englishCharacter = put("englishCharacter.dae")
+    val icosphere = put("Icosphere.dae")
+
+    val mutex = Mutex()
 
     init {
         Univ.logger.info {
-            "aaa"
+            "Emeralds loaded"
         }
     }
 

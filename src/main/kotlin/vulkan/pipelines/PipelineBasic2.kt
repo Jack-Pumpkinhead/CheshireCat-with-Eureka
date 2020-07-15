@@ -1,6 +1,8 @@
 package vulkan.pipelines
 
+import game.event.Events
 import game.main.Recorder3
+import game.main.Univ
 import kool.BYTES
 import kool.Stack
 import kotlinx.coroutines.runBlocking
@@ -74,12 +76,39 @@ class PipelineBasic2 (
 //        val vulkan: OzVulkan,
         val vma: OzVMA,
         val copyBuffer: CopyBuffer,
-        val pipeline:PipelineBasic2,
+        var pipeline:PipelineBasic2,
         val layoutMVP: LayoutMVP,
         val vert_color: FloatArray,
         val indices: IntArray,
-        var matrixIndex: Int
+        var matrixIndex: Int,
+        events: Events
     ) {
+
+        constructor(
+            univ: Univ,
+            vert_color: FloatArray,
+            indices: IntArray,
+            matrixIndex: Int
+        ) : this(
+            vma = univ.vulkan.vma,
+            copyBuffer = univ.vulkan.copybuffer,
+            pipeline = univ.vulkan.graphicPipelines.hellomvp4,
+            layoutMVP = univ.vulkan.layoutMVP,
+            vert_color = vert_color,
+            indices = indices,
+            matrixIndex = matrixIndex,
+            events = univ.events
+        )
+
+        init {
+            runBlocking {
+                events.afterRecreateSwapchain.subscribe { (vulkan, extent) ->
+                    pipeline = vulkan.graphicPipelines.hellomvp4
+                }
+            }
+        }
+
+
         val vbytes = vert_color.size * Float.BYTES
         val ibytes = indices.size * Int.BYTES
 

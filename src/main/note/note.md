@@ -52,3 +52,7 @@
     depth buffer range [0, 1]
     
     If any of the sets being bound include dynamic uniform or storage buffers, then pDynamicOffsets includes one element for each array element in each dynamic descriptor type binding in each set. Values are taken from pDynamicOffsets in an order such that all entries for set N come before set N+1; within a set, entries are ordered by the binding numbers in the descriptor set layouts; and within a binding array, elements are in order. dynamicOffsetCount must equal the total number of dynamic descriptors in the sets being bound.
+    
+    apply inverse model matrix to view pos (let camera into model space) to do selection.
+    
+    10000 Icosphere have 65fps 

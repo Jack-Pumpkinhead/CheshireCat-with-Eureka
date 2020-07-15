@@ -25,7 +25,7 @@ class DrawImage(
     val device: OzDevice,
     val uniformMatrixDynamic: OzUniformMatrixDynamic,
     val queues: OzQueues,
-    val ozObjects: OzObjects
+    val ozObjects: OzObjects_deprecated
 ) {
     val submitJob: Array<CompletableDeferred<VkResult>> = Array(swapchain.drawCmds.size) { CompletableDeferred(VkResult.SUCCESS) }
     val submitS: Array<VkSemaphore> = Array(swapchain.drawCmds.size) { device.semaphore() }

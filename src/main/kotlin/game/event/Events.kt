@@ -12,7 +12,7 @@ class Events {
 //    val map = mutableMapOf<Event<>>()
 
     val perSecond = Event<Long>()
-    val afterRecreateSwapchain = Event<Vec2i>()
+    val afterRecreateSwapchain = Event<SwapchainRecreated>()
     val onTick = Event<Tick>()
 
     val onFrameStart = Event<FrameTick>()

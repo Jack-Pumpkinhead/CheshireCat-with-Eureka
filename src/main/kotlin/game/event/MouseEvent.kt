@@ -8,9 +8,9 @@ import uno.glfw.MouseButton
  */
 class MouseEnter()
 class MouseExit()
-class MouseMove(val pos: Vec2)
-class MousePress(val button: MouseButton, val mods: Int)
-class MouseRelease(val button: MouseButton, val mods: Int)
-class MouseScroll(val delta: Float)
+data class MouseMove(val pos: Vec2)
+data class MousePress(val button: MouseButton, val mods: Int)
+data class MouseRelease(val button: MouseButton, val mods: Int)
+data class MouseScroll(val delta: Float)
 
 

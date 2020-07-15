@@ -8,7 +8,6 @@ import vkk.vk10.structs.PipelineShaderStageCreateInfo
 import vkk.vk10.structs.ShaderModuleCreateInfo
 import vulkan.OzDevice
 import vulkan.OzVulkan
-import vulkan.util.LoaderGLSL
 
 /**
  * Created by CowardlyLion on 2020/5/2 20:42

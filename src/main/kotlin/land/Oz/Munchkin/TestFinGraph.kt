@@ -30,6 +30,9 @@ class TestFinGraph(univ: Univ): Primitive(univ) {
             indices = vGraph.indexData(),
             matrixIndex = model.index
         )
+        univ.events.afterRecreateSwapchain.subscribe { (vulkan, extent) ->
+            drawable.pipeline = vulkan.graphicPipelines.helloline.graphicsPipeline
+        }
         val index = univ.frameLoop.dynamicObjs.assign(drawable)
     }
 

@@ -8,12 +8,13 @@ import vkk.vk10.createDescriptorPool
 import vkk.vk10.structs.DescriptorPoolCreateInfo
 import vkk.vk10.structs.DescriptorPoolSize
 import vulkan.concurrent.OzDescriptorPool
+import vulkan.image.OzImages
 import vulkan.util.SurfaceSwapchainSupport
 
 /**
  * Created by CowardlyLion on 2020/5/9 17:38
  */
-class OzDescriptorPools(val device: OzDevice, surfaceSupport: SurfaceSwapchainSupport) {
+class OzDescriptorPools(val device: OzDevice, surfaceSupport: SurfaceSwapchainSupport, val images: OzImages) {
 
     val pool: OzDescriptorPool
 
@@ -42,7 +43,19 @@ class OzDescriptorPools(val device: OzDevice, surfaceSupport: SurfaceSwapchainSu
 
     }
 
-    val pools = listOf(pool)
+    val imagePool = OzDescriptorPool(device, device.device.createDescriptorPool(
+        DescriptorPoolCreateInfo(
+            flags = VkDescriptorPoolCreate(0).i,
+            poolSizes = arrayOf(
+                DescriptorPoolSize(
+                    type = VkDescriptorType.COMBINED_IMAGE_SAMPLER,
+                    descriptorCount = images.list.size
+                )
+            ),
+            maxSets = images.list.size
+        )))
+
+    val pools = listOf(pool, imagePool)
 
 
     suspend fun onRecreateSwapchain(job: Job): List<CompletableJob> {

@@ -20,13 +20,13 @@ class VisualFinGraph(
 ):TickableTS {
 
     val points = List(graph.objs){i -> NewtonPoint(p = randomVec3(10F)) }
-    val colors = List(graph.arrows){
+    val colors = List(graph.arrs){
         val color = randomColor()
         color to color
     }
 
     suspend fun vertexData(): FloatArray {
-        val arr = FloatArray(6 * 2 * graph.arrows)
+        val arr = FloatArray(6 * 2 * graph.arrs)
 
         mutex.withLock {
 
@@ -37,7 +37,7 @@ class VisualFinGraph(
                 this[index++] = vec.z
             }
 
-            for (i in 0 until graph.arrows) {
+            for (i in 0 until graph.arrs) {
                 arr += points[graph.source(i)].p
                 arr += colors[i].first
                 arr += points[graph.target(i)].p
@@ -46,7 +46,7 @@ class VisualFinGraph(
         }
         return arr
     }
-    fun indexData(): IntArray = IntArray(2 * graph.arrows) { it }
+    fun indexData(): IntArray = IntArray(2 * graph.arrs) { it }
 
 
 
@@ -74,7 +74,7 @@ class VisualFinGraph(
             }
         }
 
-        for (arr in 0 until graph.arrows) { //拉近连线
+        for (arr in 0 until graph.arrs) { //拉近连线
             val a = points[graph.source(arr)]
             val b = points[graph.target(arr)]
             val f = hooke(a.p, b.p, 1.0, 0.1F)

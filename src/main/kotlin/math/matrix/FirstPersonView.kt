@@ -86,4 +86,10 @@ class FirstPersonView(
     inline fun 加减(a: Key, b: Key) = 加减(window.pressed(a), window.pressed(b))
 
 
+    fun forward(distance: Float): Vec3 {
+        val viewVector = View.viewVector(mouseRotation.rot)
+        viewVector.timesAssign(distance)
+        return pos.p.plus(viewVector)
+    }
+
 }

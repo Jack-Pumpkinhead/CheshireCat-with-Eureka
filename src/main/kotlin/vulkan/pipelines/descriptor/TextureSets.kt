@@ -28,8 +28,8 @@ class TextureSets(
 ) {
 
 
-    val sets : List<VkDescriptorSet> = images.list.map {
-        pools.pool.allocate_im(setLayouts.layoutSampler)
+    val sets: List<VkDescriptorSet> = List(images.list.size) {
+        pools.imagePool.allocate_im(setLayouts.layoutSampler)
     }
 
     init {

@@ -33,19 +33,13 @@ class TestRectangle2(univ: Univ): Primitive(univ) {
 //        model0.scale = 10F
 
         obj0 = PipelineBasic2.ObjStatic(
-            univ.vulkan.vma,
-            univ.vulkan.copybuffer,
-            univ.vulkan.graphicPipelines.hellomvp4,
-            univ.vulkan.layoutMVP,
+            univ,
             vert_color = BuildInData.vcRect,
             indices = BuildInData.iRect,
             matrixIndex = model0.index
         )
         obj1 = PipelineBasic2.ObjStatic(
-            univ.vulkan.vma,
-            univ.vulkan.copybuffer,
-            univ.vulkan.graphicPipelines.hellomvp4,
-            univ.vulkan.layoutMVP,
+            univ,
             vert_color = BuildInData.vcRect,
             indices = BuildInData.iRect,
             matrixIndex = model1.index

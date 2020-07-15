@@ -1,13 +1,17 @@
 package vulkan.pipelines
 
+import game.event.Events
 import game.main.Recorder3
 import game.main.Univ
 import kool.BYTES
 import kool.Stack
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import vkk.VkIndexType
 import vkk.VkPipelineBindPoint
 import vkk.entities.*
+import vkk.identifiers.CommandBuffer
 import vkk.vk10.bindDescriptorSets
 import vkk.vk10.bindVertexBuffers
 import vkk.vk10.createGraphicsPipeline
@@ -19,6 +23,8 @@ import vulkan.OzVulkan
 import vulkan.buffer.OzVMA
 import vulkan.buffer.VmaBuffer
 import vulkan.command.CopyBuffer
+import vulkan.drawing.OzObjectTextured2
+import vulkan.drawing.StaticObject
 import vulkan.pipelines.descriptor.LayoutMVP
 import vulkan.pipelines.descriptor.TextureSets
 import vulkan.pipelines.pipelineLayout.OzPipelineLayouts
@@ -81,13 +87,14 @@ class PipelineTextured(
     class ObjStatic(
         val vma: OzVMA,
         val copyBuffer: CopyBuffer,
-        val pipeline:PipelineTextured,
+        var pipeline:PipelineTextured,
         val layoutMVP: LayoutMVP,
         val pos_texCoord: FloatArray,
         val indices: IntArray,
         var matrixIndex: Int,
         var texIndex:Int,
-        val textureSets: TextureSets
+        val textureSets: TextureSets,
+        events: Events
     ) {
         constructor(
             univ: Univ, pos_texCoord: FloatArray,
@@ -103,8 +110,16 @@ class PipelineTextured(
             indices = indices,
             matrixIndex = matrixIndex,
             texIndex = texIndex,
-            textureSets = univ.vulkan.textureSets
+            textureSets = univ.vulkan.textureSets,
+            events = univ.events
         )
+        init {
+            runBlocking {
+                events.afterRecreateSwapchain.subscribe { (vulkan, extent) ->
+                    pipeline = vulkan.graphicPipelines.hellotexture
+                }
+            }
+        }
 
 
         val vbytes = pos_texCoord.size * Float.BYTES
@@ -186,4 +201,42 @@ class PipelineTextured(
     }
 
 
+    class MultiObject(
+        var pipeline: VkPipeline,
+        val pipelineLayout: VkPipelineLayout,
+        val data: StaticObject,
+        val layoutMVP: LayoutMVP,
+        val textureSets: TextureSets
+    ){
+        val objs = mutableListOf<OzObjectTextured2>()
+
+        val mutex = Mutex()
+
+        suspend fun record(cb: CommandBuffer, imageIndex: Int) {
+            cb.bindPipeline(
+                pipelineBindPoint = VkPipelineBindPoint.GRAPHICS,
+                pipeline = pipeline
+            )
+            data.bind(cb)
+            mutex.withLock {
+                objs.forEach {obj->
+                    cb.bindDescriptorSets(
+                        pipelineBindPoint = VkPipelineBindPoint.GRAPHICS,
+                        layout = pipelineLayout,
+                        firstSet = 0,
+                        descriptorSets = VkDescriptorSet_Array(
+                            listOf(layoutMVP.sets[imageIndex], textureSets.sets[obj.texIndex])
+                        ),
+                        dynamicOffsets = intArrayOf(obj.model.index * layoutMVP.model.dynamicAlignment.toInt())
+                    )
+                    data.draw(cb)
+                }
+            }
+        }
+
+    }
+
+
+
 }
+

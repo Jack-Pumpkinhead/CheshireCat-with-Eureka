@@ -1,5 +1,6 @@
 package vulkan
 
+import game.event.SwapchainRecreated
 import game.main.Univ
 import game.window.OzWindow
 import glm_.vec2.Vec2i
@@ -11,10 +12,11 @@ import org.springframework.context.support.GenericApplicationContext
 import org.springframework.context.support.beans
 import vkk.entities.VkSwapchainKHR
 import vkk.vk10.structs.Extent2D
+import vulkan.buffer.OzBuffer
 import vulkan.command.CopyBuffer
 import vulkan.buffer.OzVMA
 import vulkan.command.DrawCmd
-import vulkan.drawing.OzObjects
+import vulkan.drawing.OzObjects_deprecated
 import vulkan.image.OzImages
 import vulkan.image.Samplers
 import vulkan.pipelines.*
@@ -24,7 +26,6 @@ import vulkan.pipelines.descriptor.TextureSets
 import vulkan.pipelines.pipelineLayout.OzUniformMatrixDynamic
 import vulkan.pipelines.pipelineLayout.OzPipelineLayouts
 import vulkan.util.DMs
-import vulkan.util.LoaderGLSL
 import vulkan.util.SurfaceSwapchainSupport
 
 /**
@@ -51,6 +52,7 @@ class OzVulkan(val univ: Univ, val window: OzWindow) {
     var copybuffer: CopyBuffer
 
     var vma: OzVMA
+    var buffer:OzBuffer
     var images: OzImages
     var imageViews: OzImageViews
 
@@ -79,6 +81,7 @@ class OzVulkan(val univ: Univ, val window: OzWindow) {
             bean<CopyBuffer>()
 
             bean<OzVMA>(destroyMethodName = "destroy")
+            bean<OzBuffer>()
 
             bean<OzImageViews>()
 
@@ -95,7 +98,7 @@ class OzVulkan(val univ: Univ, val window: OzWindow) {
 
         }
         val extraBeans = beans() {
-            bean<OzObjects>()
+            bean<OzObjects_deprecated>()
             bean<DMs>()
             bean<LayoutMVP>(destroyMethodName = "destroy")
             bean<Samplers>(destroyMethodName = "destroy")
@@ -121,6 +124,8 @@ class OzVulkan(val univ: Univ, val window: OzWindow) {
         copybuffer = context.getBean()
 
         vma = context.getBean()
+        buffer = context.getBean()
+
         imageViews = context.getBean()
         shadermodules = context.getBean()
         seyLayouts = context.getBean()
@@ -229,7 +234,8 @@ class OzVulkan(val univ: Univ, val window: OzWindow) {
 //            it.invoke()
 //        }
 
-        univ.events.afterRecreateSwapchain.send(windowSize)
+        univ.events.afterRecreateSwapchain.send(SwapchainRecreated(this, windowSize))
+
 //        swapchainContext.getBean<OzObjects>().getObjects().forEach {
 //            it.data.afterSwapchainRecreated()
 //        }
@@ -242,7 +248,6 @@ class OzVulkan(val univ: Univ, val window: OzWindow) {
         swapchainContext.getBean<OzDevice>().device.waitIdle()
         swapchainContext.close()
         context.close()
-        LoaderGLSL.destroy()
     }
 
     init {

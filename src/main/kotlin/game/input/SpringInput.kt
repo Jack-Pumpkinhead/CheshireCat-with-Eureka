@@ -4,16 +4,13 @@ import assimp.AiNode
 import assimp.AiPostProcessStep
 import assimp.Importer
 import assimp.or
-import com.badlogic.gdx.assets.AssetManager
+import de.intarsys.cwt.freetype.Freetype
+import de.intarsys.cwt.freetype.nativec.FTLibrary
 import game.entity.Emerald
 import game.entity.EntityNode
 import gli_.Texture
 import gli_.gli
-import ktx.freetype.loadFreeTypeFont
-import ktx.freetype.registerFreeTypeFontLoaders
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.core.io.ResourceLoader
-import org.springframework.stereotype.Component
 import vulkan.OzVulkan
 import java.io.InputStream
 import java.util.*
@@ -37,24 +34,30 @@ class SpringInput(val resourceLoader: ResourceLoader) {
         return image
     }
 
-    fun loadModel(path: String): Emerald {
+    fun loadModel(path: String): Emerald? {
         val importer = Importer()
         val aiScene = importer.readFile(
             url(path),
             AiPostProcessStep.JoinIdenticalVertices.or(
                 AiPostProcessStep.Triangulate).or(
-                AiPostProcessStep.FixInfacingNormals
+                AiPostProcessStep.FixInfacingNormals).or(
+                AiPostProcessStep.FlipUVs
             )
         )
         if (aiScene == null) {
             OzVulkan.logger.info { importer.errorString }
-            return Emerald.NULL
-        }
+            return null
+        } else {
+
+
+//        val texture = aiScene.textures["UVA"]!!
+
+
 
         val nodeStack = Stack<Pair<EntityNode?, AiNode>>()  //parent to children
         nodeStack += null to aiScene.rootNode
 
-        val emerald = Emerald()
+        val emerald = Emerald(aiScene)
 
         while (nodeStack.isNotEmpty()) {
             val (parentNode, node) = nodeStack.pop()
@@ -69,20 +72,30 @@ class SpringInput(val resourceLoader: ResourceLoader) {
             }
         }
 
-        importer.freeScene()
+//        importer.freeScene()
 
         return emerald
+        }
     }
 
+    init {
+//        loadFont("font\\GrenzeGotisch-VariableFont_wght.ttf")
+
+    }
 
     fun loadFont(path: String) {
-        val asset = AssetManager()
-        asset.registerFreeTypeFontLoaders()
-        val fft = asset.loadFreeTypeFont(url(path).file){
 
-        }
-//        FreeTypeFontGenerator
-
+//        GrenzeGotisch-VariableFont_wght.ttf
+//FTLibrary.
+        val library = Freetype.initFreeType()
+        val face = library.newFace(url(path).file, 0)
+        face.setCharSize(16 * 64, 16 * 64, 300, 300)
+        face.getCharIndex('A'.toInt())
+        face.loadGlyph(0,0)
+        val glyphSlot = face.glyphSlot
+        glyphSlot.renderGlyph(Freetype.RENDER_MODE_NORMAL)
+        val bitmap = glyphSlot.glyphSlot.bitmap
+        bitmap.bytes
 
     }
 

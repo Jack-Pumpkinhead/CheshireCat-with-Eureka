@@ -33,3 +33,5 @@ fun Vec3.clampZ(abs: Float): Vec3 {
     }
     return this
 }
+
+fun distance2(a: Vec3, b: Vec3): Float = (a - b).length2()

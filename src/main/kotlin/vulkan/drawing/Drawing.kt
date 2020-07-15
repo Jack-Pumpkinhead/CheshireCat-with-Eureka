@@ -23,9 +23,9 @@ class Drawing(val ozVulkan: OzVulkan, val frameLoop: FrameLoop) {
     //TODO: use OzObjects for management
 
     init {
-        val ozObjects = ozVulkan.swapchainContext.getBean<OzObjects>()
+        val ozObjects = ozVulkan.swapchainContext.getBean<OzObjects_deprecated>()
         runBlocking {
-            ozObjects.register(OzObject(rectangle, MVP_deprecated(ozVulkan)))
+            ozObjects.register(OzObject_deprecated(rectangle, MVP_deprecated(ozVulkan)))
         }
 
     }

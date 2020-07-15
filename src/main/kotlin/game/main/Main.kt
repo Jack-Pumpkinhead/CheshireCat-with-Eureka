@@ -23,6 +23,7 @@ import org.springframework.context.support.beans
 import uno.glfw.glfw
 import uno.glfw.windowHint
 import vulkan.OzVulkan
+import vulkan.drawing.OzObjects
 
 /**
  * Created by CowardlyLion on 2020/4/20 12:51
@@ -45,9 +46,9 @@ class Univ(){
     val glsl:GLSLoader
     val emeralds:Emeralds
     val events: Events
+    val objects: OzObjects
 
 
-    val gameObjects:GameObjects
 
     val window: OzWindow
     init {
@@ -71,6 +72,7 @@ class Univ(){
             bean<GLSLoader>(destroyMethodName = "destroy")
             bean<Emeralds>()
             bean<Events>()
+            bean<OzObjects>()
         }
         beans.initialize(context)
         context.refresh()
@@ -78,7 +80,8 @@ class Univ(){
         glsl = context.getBean()
         emeralds = context.getBean()
         events = context.getBean()
-        gameObjects = GameObjects(this)
+        objects = context.getBean()
+
 
 //        glsl.init()
     }
@@ -93,6 +96,11 @@ class Univ(){
     val gameloop = Gameloop(this)
 
     val matrices = Matrices(events,window, gameloop)
+
+
+    //create late
+    val gameObjects:GameObjects = GameObjects(this)
+
 
     val debug: DebugJFrame = DebugJFrame(this)
 

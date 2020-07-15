@@ -5,6 +5,7 @@ import kool.BYTES
 import kool.PointerBuffer
 import kool.Stack
 import kool.adr
+import kotlinx.coroutines.runBlocking
 import org.lwjgl.system.MemoryUtil.NULL
 import org.lwjgl.system.MemoryUtil.memPutAddress
 import org.lwjgl.util.vma.Vma
@@ -105,19 +106,7 @@ class OzVMA(
 
 
 
-    suspend fun to_VertexBuffer_device_local(arr: FloatArray, copyBuffer: CopyBuffer): VmaBuffer {
-        val bytes = arr.size * Float.BYTES
-        val staging = createBuffer_vertexStaging(bytes)
-        Stack {
-            staging.memory.fill(
-                it.mallocFloat(arr.size).put(arr).flip()
-            )
-        }
-        val deviceLocal = of_VertexBuffer_device_local(bytes)
-        copyBuffer.copyBuffer(staging.pBuffer, deviceLocal.pBuffer, bytes)
-        staging.destroy()
-        return deviceLocal
-    }
+
 
     fun of_VertexBuffer_device_local(bytes: Int): VmaBuffer = create(
         bytes.L,
@@ -253,8 +242,6 @@ class OzVMA(
         Vma.vmaCreateImage(pAllocator, imageCreateInfo, vmaAllocationCI, pImage, pAllocation, null)
         return@Stack VmaImage(pAllocator, pImage.get(), pAllocation.get())
     }
-
-
 
 
 

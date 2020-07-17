@@ -23,7 +23,7 @@ class VisualGraphWrap(val univ: Univ, val graph: VisualGraph) {
     suspend fun init() {
         pivotModel = models.fetch()
         pivotModel.pos = graph.pivot.p
-        pivotModel.scale = 0.5F
+        pivotModel.scale = 0.2F
 
         graph.points.forEach {
             val m = models.fetch()
@@ -48,7 +48,7 @@ class VisualGraphWrap(val univ: Univ, val graph: VisualGraph) {
         graph.addObj(point)
         val m = models.fetch()
         m.pos = point.p
-        m.scale = 0.5F
+        m.scale = 0.2F
 
         pointsModel += m
         return m

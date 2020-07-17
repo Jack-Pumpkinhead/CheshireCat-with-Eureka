@@ -38,6 +38,8 @@ class OzImages(
     val Icosphere_blue = put("textures\\Icosphere_blue.png", samplers.sampler)
     val Icosphere_green = put("textures\\Icosphere_green.png", samplers.sampler)
     val Icosphere_red = put("textures\\Icosphere_red.png", samplers.sampler)
+    val Icosphere_yellow = put("textures\\Icosphere_yellow.png", samplers.sampler)
+    val noise = put("textures\\noise.png", samplers.sampler)
 
 
 

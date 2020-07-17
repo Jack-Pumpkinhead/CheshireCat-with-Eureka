@@ -21,6 +21,7 @@ import vulkan.drawing.ObjDynamic
 import vulkan.drawing.PerImageConfiguration
 import vulkan.drawing.Submit
 import vulkan.pipelines.PipelineTextured
+import vulkan.pipelines.PipelineVertexOnly
 
 class FrameLoop(val univ: Univ, val window: OzWindow) {
 
@@ -70,6 +71,7 @@ class FrameLoop(val univ: Univ, val window: OzWindow) {
     val drawCmds3 = SyncArray<Recorder3>()
     val dynamicObjs = SyncArray<ObjDynamic>()
     val multiObject = SyncArray<PipelineTextured.MultiObject>()
+    val multiObject_vertexOnly = SyncArray<PipelineVertexOnly.MultiObject>()
 
     fun loop() {
 /*
@@ -176,6 +178,11 @@ class FrameLoop(val univ: Univ, val window: OzWindow) {
                     }
                 }
                 multiObject.withLockS {mObjs->
+                    mObjs.forEach {mObj->
+                        mObj.record(cb, imageIndex)
+                    }
+                }
+                multiObject_vertexOnly.withLockS {mObjs->
                     mObjs.forEach {mObj->
                         mObj.record(cb, imageIndex)
                     }

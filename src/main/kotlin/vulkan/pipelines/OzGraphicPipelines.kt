@@ -26,6 +26,7 @@ class OzGraphicPipelines(
 //    val helloSampler = GPTextured(device, shadermodule, pipelineLayouts, renderpass, 0, extent2D)
     val hellotexture = PipelineTextured(device, shadermodule, pipelineLayouts, renderpass, 0, extent2D)
     val helloline = PipelineLine(device, shadermodule, pipelineLayouts, renderpass, 0, extent2D)
+    val vertexOnly = PipelineVertexOnly(device, shadermodule, pipelineLayouts, renderpass, 0, extent2D)
 
 
     fun destroy() {

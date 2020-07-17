@@ -12,6 +12,10 @@ import vkk.vk10.structs.VertexInputBindingDescription
  */
 class VertexInput {
     companion object {
+
+        val P3 = stateCI(
+            intArrayOf(3) to intArrayOf(0)
+        )
         val P3C3 = stateCI(
             intArrayOf(3, 3) to intArrayOf(0, 1)
         )
@@ -60,7 +64,7 @@ class VertexInput {
         }
 
 
-        //vararg
+        //vararg   dim to location
         fun stateCI(vararg bindings: Pair<IntArray, IntArray>): PipelineVertexInputStateCreateInfo {
             val bindingDesc = mutableListOf<VertexInputBindingDescription>()
             val attributeDesc = mutableListOf<VertexInputAttributeDescription>()

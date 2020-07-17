@@ -64,91 +64,27 @@ class TestIcosphere(univ: Univ) : Primitive(univ) {
 
         multiObject = univ.putMultiObject(univ.emeralds.icosphere.find("Icosphere")!!.meshes[0])
 
-        univ.events.mousePress.subscribe { (button, mods) ->
-            Univ.logger.info {
-                "$button"
-            }
-
-            if (button == MouseButton.`1`) {
-                mutex.withLock {
-                    Univ.logger.info {
-                        "Mouse Left!"
-                    }
-                    val graph = VisualGraphWrap(
-                        univ = univ,
-                        graph = VisualGraph(
-                            pivot = NewtonPoint(p = fpv.forward(1F)),
-                            numPoints = 1
-                        )
-                    )
-                    graph.init()
-                    graphs += graph
-
-                    multiObject.mutex.withLock {
-
-                        multiObject.objs += OzObjectTextured2(
-//                            texIndex = if (graph == activeGraph) images.Icosphere_red else images.Icosphere_blue,
-                            texIndex = images.Icosphere_blue,
-                            model = graph.pivotModel,
-                            visible = true
-                        )
-                    }
-
-                }
-
-            }
-        }
-        univ.events.mousePress.subscribe { (button, mods) ->
-            if (button == MouseButton.`2`) {
-                Univ.logger.info {
-                    "Mouse right!"
-                }
-                mutex.withLock {
-                    val model = activeGraph?.addObj(point = NewtonPoint(p = fpv.forward(1F)))
-                    if (activeGraph != null) {  //potential bug
-
-                        multiObject.mutex.withLock {
-                            multiObject.objs += OzObjectTextured2(
-                                texIndex = images.Icosphere_green,
-                                model = model!!,
-                                visible = true
-                            )
-                        }
-                    }
-
-
-                }
-            }
-        }
 
         univ.events.keyPress.subscribe { (key, mods) ->
             if (key == Key.X) {
                 mutex.withLock {
                     snapActive()
-                    Univ.logger.info {
-                        "X! $activeGraph"
-                    }
                 }
             }
+            if (key == Key.G) {
+                addGraph()
+            }
+            if (key == Key.V) {
+                addPoint()
+            }
+
         }
 
-        Univ.logger.info {
-            "???"
-        }
 
         multiObject.mutex.withLock {
-            Univ.logger.info {
-                "?????"
-            }
             val objs = multiObject.objs
             objs.clear()
-            Univ.logger.info {
-                "a"
-            }
             for (graph in graphs) {
-                Univ.logger.info {
-                    "a $graph"
-                }
                 objs += OzObjectTextured2(
                     texIndex = if (graph == activeGraph) images.Icosphere_red else images.Icosphere_blue,
                     model = graph.pivotModel,
@@ -166,9 +102,6 @@ class TestIcosphere(univ: Univ) : Primitive(univ) {
             }
         }
 
-        Univ.logger.info {
-            "aaa"
-        }
     }
 
 
@@ -177,6 +110,49 @@ class TestIcosphere(univ: Univ) : Primitive(univ) {
             graphs.minBy { distance2(it.graph.pivot.p, fpv.forward(1F)) }
         } else null
 
+    }
+
+    suspend fun addGraph() {
+        mutex.withLock {
+            val graph = VisualGraphWrap(
+                univ = univ,
+                graph = VisualGraph(
+                    pivot = NewtonPoint(p = fpv.forward(1F)),
+                    numPoints = 1
+                )
+            )
+            graph.init()
+            graphs += graph
+
+            multiObject.mutex.withLock {
+
+                multiObject.objs += OzObjectTextured2(
+//                            texIndex = if (graph == activeGraph) images.Icosphere_red else images.Icosphere_blue,
+                    texIndex = images.Icosphere_blue,
+                    model = graph.pivotModel,
+                    visible = true
+                )
+            }
+
+        }
+    }
+
+    suspend fun addPoint() {
+        mutex.withLock {
+            val model = activeGraph?.addObj(point = NewtonPoint(p = fpv.forward(1F)))
+            if (activeGraph != null) {  //potential bug
+
+                multiObject.mutex.withLock {
+                    multiObject.objs += OzObjectTextured2(
+                        texIndex = images.Icosphere_green,
+                        model = model!!,
+                        visible = true
+                    )
+                }
+            }
+
+
+        }
     }
 
 

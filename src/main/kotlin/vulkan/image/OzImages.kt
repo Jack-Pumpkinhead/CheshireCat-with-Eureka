@@ -33,13 +33,22 @@ class OzImages(
     }
 
     val crafting_table = put("textures\\crafting_table.png", samplers.samplerNearest)
-    val UVA = put("textures\\UVA.png", samplers.sampler)
-    val UVB = put("textures\\UVB.png", samplers.sampler)
-    val Icosphere_blue = put("textures\\Icosphere_blue.png", samplers.sampler)
-    val Icosphere_green = put("textures\\Icosphere_green.png", samplers.sampler)
-    val Icosphere_red = put("textures\\Icosphere_red.png", samplers.sampler)
-    val Icosphere_yellow = put("textures\\Icosphere_yellow.png", samplers.sampler)
-    val noise = put("textures\\noise.png", samplers.sampler)
+
+    //    val crafting_table = put("textures\\crafting_table.png", samplers.sampler_Mipmap(4))
+//    val UVA = put("textures\\UVA.png", samplers.sampler)
+//    val UVB = put("textures\\UVB.png", samplers.sampler)
+//    val Icosphere_blue = put("textures\\Icosphere_blue.png", samplers.sampler)
+//    val Icosphere_green = put("textures\\Icosphere_green.png", samplers.sampler)
+//    val Icosphere_red = put("textures\\Icosphere_red.png", samplers.sampler)
+//    val Icosphere_yellow = put("textures\\Icosphere_yellow.png", samplers.sampler)
+//    val noise = put("textures\\noise.png", samplers.sampler)
+    val UVA = put("textures\\UVA.png", samplers.sampler_Mipmap(10))
+    val UVB = put("textures\\UVB.png", samplers.sampler_Mipmap(10))
+    val Icosphere_blue = put("textures\\Icosphere_blue.png", samplers.sampler_Mipmap(10))
+    val Icosphere_green = put("textures\\Icosphere_green.png", samplers.sampler_Mipmap(10))
+    val Icosphere_red = put("textures\\Icosphere_red.png", samplers.sampler_Mipmap(10))
+    val Icosphere_yellow = put("textures\\Icosphere_yellow.png", samplers.sampler_Mipmap(10))
+    val noise = put("textures\\noise.png", samplers.sampler_Mipmap(10))
 
 
 

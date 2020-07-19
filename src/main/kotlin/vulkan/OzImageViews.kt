@@ -14,7 +14,7 @@ import vkk.vk10.structs.ImageViewCreateInfo
 
 class OzImageViews(val device: OzDevice) {
 
-    fun createColor(image: VkImage, format: VkFormat): VkImageView {
+    fun createColor(image: VkImage, format: VkFormat, mipLevel: Int = 1): VkImageView {
         return device.device.createImageView(
             ImageViewCreateInfo(
                 flags = VkImageViewCreate(0).i,
@@ -25,7 +25,7 @@ class OzImageViews(val device: OzDevice) {
                 subresourceRange = ImageSubresourceRange(
                     aspectMask = VkImageAspect.COLOR_BIT.i,
                     baseMipLevel = 0,
-                    levelCount = 1,
+                    levelCount = mipLevel,
                     baseArrayLayer = 0,
                     layerCount = 1
                 )

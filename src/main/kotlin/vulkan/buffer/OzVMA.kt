@@ -25,6 +25,8 @@ import vulkan.OzPhysicalDevice
 import vulkan.OzVulkan
 import vulkan.command.CopyBuffer
 import vulkan.image.VmaImage
+import kotlin.math.log2
+import kotlin.math.max
 
 class OzVMA(
     val ozInstance: OzInstance,
@@ -142,39 +144,6 @@ class OzVMA(
         memoryProperty = VkMemoryProperty.HOST_VISIBLE_BIT.i,
         memoryProperty_prefered = VkMemoryProperty.HOST_COHERENT_BIT.i,
         vmaMemoryUsage = Vma.VMA_MEMORY_USAGE_CPU_TO_GPU
-    )
-
-    fun createImage_deviceLocal_dstsampled(format: VkFormat, extent3D: Extent3D): VmaImage = createImage_deviceLocal(
-        ImageCreateInfo(
-            flags = VkImageCreate(0).i,
-            imageType = VkImageType._2D,
-            extent = extent3D,
-            mipLevels = 1,
-            arrayLayers = 1,
-            format = format,
-            tiling = VkImageTiling.OPTIMAL,
-            initialLayout = VkImageLayout.UNDEFINED,
-            usage = VkImageUsage.TRANSFER_DST_BIT.or(VkImageUsage.SAMPLED_BIT),
-            samples = VkSampleCount._1_BIT,
-            sharingMode = VkSharingMode.EXCLUSIVE,
-            queueFamilyIndices = null   //with sharingMode
-        )
-    )
-    fun createImage_deviceLocal_depth(format: VkFormat,extent2D: Extent2D): VmaImage = createImage_deviceLocal(
-        ImageCreateInfo(
-            flags = VkImageCreate(0).i,
-            imageType = VkImageType._2D,
-            extent = Extent3D(extent2D, 1),
-            mipLevels = 1,
-            arrayLayers = 1,
-            format = format,
-            tiling = VkImageTiling.OPTIMAL,
-            initialLayout = VkImageLayout.UNDEFINED,
-            usage = VkImageUsage.DEPTH_STENCIL_ATTACHMENT_BIT.i,
-            samples = VkSampleCount._1_BIT,
-            sharingMode = VkSharingMode.EXCLUSIVE,
-            queueFamilyIndices = null   //with sharingMode
-        )
     )
 
 

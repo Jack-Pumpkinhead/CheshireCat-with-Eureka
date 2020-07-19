@@ -27,7 +27,8 @@ class DepthImage(
 
     init {
         image = runBlocking {
-            vma.createImage_deviceLocal_depth(format, extent2D)
+//            vma.createImage_deviceLocal_depth(format, extent2D)
+            vma.createImage_deviceLocal(depth(format, extent2D))
         }
         imageView = ozImageViews.depth(image.vkImage, format)
 

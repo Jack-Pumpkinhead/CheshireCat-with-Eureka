@@ -41,7 +41,7 @@ class Emeralds(val springInput: SpringInput) {
     val crafting_table = put("crafting_table.dae")
     val englishCharacter = put("englishCharacter.dae")
     val icosphere = put("Icosphere.dae")
-    val covid19 = put("Covid-19.dae")
+//    val covid19 = put("Covid-19.dae")
 
     val mutex = Mutex()
 

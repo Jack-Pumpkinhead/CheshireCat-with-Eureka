@@ -95,6 +95,7 @@ class PipelineVertexOnly(
                 pipelineBindPoint = VkPipelineBindPoint.GRAPHICS,
                 pipeline = pipeline
             )
+//            cb.nextSubpass()
             data.bind(cb)
             mutex.withLock {
                 objs.forEach {obj->

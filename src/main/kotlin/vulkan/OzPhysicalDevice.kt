@@ -18,6 +18,7 @@ class OzPhysicalDevice(val pd: PhysicalDevice) {
     val queueFamilyProperties: Array<QueueFamilyProperties> =pd.queueFamilyProperties
     val features: PhysicalDeviceFeatures = pd.features
     val extensions: List<String> = pd.enumerateDeviceExtensionProperties().map(ExtensionProperties::extensionName)
+    fun formatProperties(format: VkFormat) = pd.getFormatProperties(format)
 
     val depthFormat = findDepthFormat() //D32_SFLOAT_S8_UINT
 

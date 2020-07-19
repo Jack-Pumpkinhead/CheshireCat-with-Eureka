@@ -2,6 +2,7 @@ package vulkan.image
 
 import game.input.SpringInput
 import game.main.Univ
+import gli_.Texture
 import kotlinx.coroutines.runBlocking
 import vkk.*
 import vkk.entities.VkImageView
@@ -10,6 +11,8 @@ import vkk.vk10.structs.*
 import vulkan.*
 import vulkan.buffer.OzVMA
 import vulkan.command.TransitionImageLayout
+import kotlin.math.log2
+import kotlin.math.max
 
 /**
  * Created by CowardlyLion on 2020/5/24 23:16
@@ -22,7 +25,8 @@ class OzImage(
     val ozImageViews: OzImageViews,
     val springInput: SpringInput,
     val path: String,
-    val sampler: VkSampler
+    val sampler: VkSampler,
+    generateMipmap: Boolean = true
 ) {
     constructor(univ:Univ,path: String,sampler: VkSampler):this(
         univ.vulkan.vma,
@@ -36,53 +40,78 @@ class OzImage(
     )
 
     val image: VmaImage
+    val imageCI: ImageCreateInfo
     val imageView: VkImageView
 
 
     init {
-        image = runBlocking {
-            getImage(path)
+        val texture = springInput.loadImage(path)
+        /*      1
+        Univ.logger.info {
+            "texture $path levels:   ${texture.levels()}"
+        }*/
+
+        val extent = texture.extent()
+        val mipLevels = if (generateMipmap) {
+            log2(max(extent.x, extent.y).toFloat()).toInt() + 1
+        } else 1
+
+
+        imageCI = dstsampled(
+            VkFormat.R8G8B8A8_SRGB,
+            Extent3D(extent.x, extent.y, extent.z),
+            mipLevels
+        )
+        image = vma.createImage_deviceLocal(imageCI)
+        imageView = ozImageViews.createColor(image.vkImage, VkFormat.R8G8B8A8_SRGB, mipLevels)
+
+        runBlocking {
+            fillImage(texture, image, imageCI.mipLevels, imageCI.extent)
         }
-        imageView = ozImageViews.createColor(image.vkImage, VkFormat.R8G8B8A8_SRGB)
     }
 
-    private suspend fun getImage(path: String): VmaImage {
-
+    suspend fun fillImage(texture: Texture, image: VmaImage, mipLevels: Int = 1, extent: Extent3D) {
         val deferred = commandPools.graphicMutableCP.allocate(3)
-
-        val texture = springInput.loadImage(path)
-
         val buffer = vma.createBuffer_imageStaging(texture.size)
         buffer.memory.fill(texture.data())
-
-        val image = vma.createImage_deviceLocal_dstsampled(
-//            VkFormat.B8G8R8A8_SRGB,   //?????BGRA
-            VkFormat.R8G8B8A8_SRGB,
-            Extent3D(texture.extent().x, texture.extent().y, texture.extent().z)
-        )
-
 
         val cbs = deferred.await()
         val trans_dstOptimal = 0
         val copy = 1
-        val trans_shaderRead = 2
+        val trans_shaderRead_mipmap = 2
 
         TransitionImageLayout.transitionImageLayout_tranDst(
             image = image.vkImage,
-            cb = cbs[trans_dstOptimal]
+            cb = cbs[trans_dstOptimal],
+            mipLevels = mipLevels
         )
 
         TransitionImageLayout.copyBufferToImage(
             buffer = buffer.vkBuffer,
             image = image.vkImage,
-            width = texture.extent().x,
-            height = texture.extent().y,
+            width = extent.width,
+            height = extent.height,
             cb = cbs[copy]
         )
-        TransitionImageLayout.transitionImageLayout_ShaderRead(
+
+        val formatProperties = device.physicalDevice.formatProperties(imageCI.format)
+        if (!formatProperties.optimalTilingFeatures.has(VkFormatFeature.SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
+            OzVulkan.logger.error { "optimalTilingFeatures don't have VkFormatFeature.SAMPLED_IMAGE_FILTER_LINEAR_BIT !" }
+        }
+
+
+        TransitionImageLayout.generateMipmaps(
             image = image.vkImage,
-            cb = cbs[trans_shaderRead]
+            cb = cbs[trans_shaderRead_mipmap],
+            width = extent.width,
+            height = extent.height,
+            mipLevels = mipLevels
         )
+        /*TransitionImageLayout.transitionImageLayout_ShaderRead(
+            image = image.vkImage,
+            cb = cbs[trans_shaderRead],
+            mipLevel = mipLevels
+        )*/
 
         val submitT = queues.graphicQ_2.submit(
             SubmitInfo(
@@ -93,7 +122,6 @@ class OzImage(
         commandPools.graphicMutableCP.free(cbs)
         buffer.destroy()
 
-        return image
     }
 
 

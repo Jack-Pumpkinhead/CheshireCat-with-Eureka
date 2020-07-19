@@ -1,5 +1,6 @@
 package vulkan.command
 
+import math.half
 import org.lwjgl.vulkan.VK10
 import vkk.*
 import vkk.entities.VkBuffer
@@ -7,6 +8,7 @@ import vkk.entities.VkDeviceSize
 import vkk.entities.VkImage
 import vkk.identifiers.CommandBuffer
 import vkk.vk10.begin
+import vkk.vk10.blitImage
 import vkk.vk10.copyBufferToImage
 import vkk.vk10.pipelineBarrier
 import vkk.vk10.structs.*
@@ -23,8 +25,8 @@ class TransitionImageLayout(val commandPools: OzCommandPools, val queues: OzQueu
 
         fun transitionImageLayout_tranDst(
             image: VkImage,
-            format: VkFormat = VkFormat.B8G8R8A8_SRGB,
-            cb: CommandBuffer
+            cb: CommandBuffer,
+            mipLevels: Int = 1
         ) {
 
             cb.begin(
@@ -45,7 +47,7 @@ class TransitionImageLayout(val commandPools: OzCommandPools, val queues: OzQueu
                 subresourceRange = ImageSubresourceRange(
                     aspectMask = VkImageAspect.COLOR_BIT.i,
                     baseMipLevel = 0,
-                    levelCount = 1,
+                    levelCount = mipLevels,
                     baseArrayLayer = 0,
                     layerCount = 1
                 )   //The image and subresourceRange specify the image that is affected and the specific part of the image.
@@ -61,12 +63,148 @@ class TransitionImageLayout(val commandPools: OzCommandPools, val queues: OzQueu
             )
             cb.end()
         }
+        fun generateMipmaps(
+            image: VkImage,
+            cb: CommandBuffer,
+            mipLevels: Int = 1,
+            width: Int,
+            height: Int
+        ) {
+
+            cb.begin(
+                CommandBufferBeginInfo(
+                    flags = VkCommandBufferUsage.ONE_TIME_SUBMIT_BIT.i
+                )
+            )
+
+            var mipW = width
+            var mipH = height
+            for (i in 1 until mipLevels) {
+                val imageMemoryBarrier = ImageMemoryBarrier(
+                    srcAccessMask = VkAccess.TRANSFER_WRITE_BIT.i,
+                    dstAccessMask = VkAccess.TRANSFER_READ_BIT.i,
+                    oldLayout = VkImageLayout.TRANSFER_DST_OPTIMAL,
+                    newLayout = VkImageLayout.TRANSFER_SRC_OPTIMAL,
+                    srcQueueFamilyIndex = VK10.VK_QUEUE_FAMILY_IGNORED,
+                    dstQueueFamilyIndex = VK10.VK_QUEUE_FAMILY_IGNORED,
+                    image = image,
+                    subresourceRange = ImageSubresourceRange(
+                        aspectMask = VkImageAspect.COLOR_BIT.i,
+                        baseMipLevel = i - 1,
+                        levelCount = 1,
+                        baseArrayLayer = 0,
+                        layerCount = 1
+                    )   //The image and subresourceRange specify the image that is affected and the specific part of the image.
+                )
+
+                cb.pipelineBarrier(
+                    srcStageMask = VkPipelineStage.TRANSFER_BIT.i,
+                    dstStageMask = VkPipelineStage.TRANSFER_BIT.i,
+                    dependencyFlags = VkDependency(0).i,
+                    memoryBarriers = null,
+                    imageMemoryBarriers = arrayOf(imageMemoryBarrier),
+                    bufferMemoryBarriers = null
+                )
+
+                cb.blitImage(
+                    srcImage = image,
+                    srcImageLayout = VkImageLayout.TRANSFER_SRC_OPTIMAL,
+                    dstImage = image,
+                    dstImageLayout = VkImageLayout.TRANSFER_DST_OPTIMAL,
+//                    regions =
+                    region = ImageBlit(
+                        srcOffsets = arrayOf(
+                            Offset3D(0, 0, 0),
+                            Offset3D(mipW, mipH, 1)
+                        ),
+                        srcSubresource =
+                        ImageSubresourceLayers(
+                            aspectMask = VkImageAspect.COLOR_BIT.i,
+                            mipLevel = i - 1,
+                            baseArrayLayer = 0,
+                            layerCount = 1
+                        ),
+                        dstOffsets = arrayOf(
+                            Offset3D(0, 0, 0),
+                            Offset3D(half(mipW), half(mipH), 1)
+                        ),
+                        dstSubresource = ImageSubresourceLayers(
+                            aspectMask = VkImageAspect.COLOR_BIT.i,
+                            mipLevel = i,
+                            baseArrayLayer = 0,
+                            layerCount = 1
+                        )
+                    ),
+                    filter = VkFilter.LINEAR
+                )
+
+                val imageMemoryBarrier_ = ImageMemoryBarrier(
+                    srcAccessMask = VkAccess.TRANSFER_READ_BIT.i,
+                    dstAccessMask = VkAccess.SHADER_READ_BIT.i,
+                    oldLayout = VkImageLayout.TRANSFER_SRC_OPTIMAL,
+                    newLayout = VkImageLayout.SHADER_READ_ONLY_OPTIMAL,
+                    srcQueueFamilyIndex = VK10.VK_QUEUE_FAMILY_IGNORED,
+                    dstQueueFamilyIndex = VK10.VK_QUEUE_FAMILY_IGNORED,
+                    image = image,
+                    subresourceRange = ImageSubresourceRange(
+                        aspectMask = VkImageAspect.COLOR_BIT.i,
+                        baseMipLevel = i - 1,
+                        levelCount = 1,
+                        baseArrayLayer = 0,
+                        layerCount = 1
+                    )   //The image and subresourceRange specify the image that is affected and the specific part of the image.
+                )
+
+                cb.pipelineBarrier(
+                    srcStageMask = VkPipelineStage.TRANSFER_BIT.i,
+                    dstStageMask = VkPipelineStage.FRAGMENT_SHADER_BIT.i,
+                    dependencyFlags = VkDependency(0).i,
+                    memoryBarriers = null,
+                    imageMemoryBarriers = arrayOf(imageMemoryBarrier_),
+                    bufferMemoryBarriers = null
+                )
+                mipW = half(mipW)
+                mipH = half(mipH)
+            }
+
+            val imageMemoryBarrier = ImageMemoryBarrier(
+                srcAccessMask = VkAccess.TRANSFER_WRITE_BIT.i,
+                dstAccessMask = VkAccess.SHADER_READ_BIT.i,
+                oldLayout = VkImageLayout.TRANSFER_DST_OPTIMAL,
+                newLayout = VkImageLayout.SHADER_READ_ONLY_OPTIMAL,
+                srcQueueFamilyIndex = VK10.VK_QUEUE_FAMILY_IGNORED,
+                dstQueueFamilyIndex = VK10.VK_QUEUE_FAMILY_IGNORED,
+                image = image,
+                subresourceRange = ImageSubresourceRange(
+                    aspectMask = VkImageAspect.COLOR_BIT.i,
+                    baseMipLevel = mipLevels - 1,
+                    levelCount = 1,
+                    baseArrayLayer = 0,
+                    layerCount = 1
+                )   //The image and subresourceRange specify the image that is affected and the specific part of the image.
+            )
+
+            cb.pipelineBarrier(
+                srcStageMask = VkPipelineStage.TRANSFER_BIT.i,
+                dstStageMask = VkPipelineStage.FRAGMENT_SHADER_BIT.i,
+                dependencyFlags = VkDependency(0).i,
+                memoryBarriers = null,
+                imageMemoryBarriers = arrayOf(imageMemoryBarrier),
+                bufferMemoryBarriers = null
+            )
+
+
+            cb.end()
+        }
+
 
         fun transitionImageLayout_ShaderRead(
             image: VkImage,
             format: VkFormat = VkFormat.B8G8R8A8_SRGB,
-            cb: CommandBuffer
+            cb: CommandBuffer,
+            mipLevel: Int = 1
         ) {
+
 
             cb.begin(
                 CommandBufferBeginInfo(
@@ -86,7 +224,7 @@ class TransitionImageLayout(val commandPools: OzCommandPools, val queues: OzQueu
                 subresourceRange = ImageSubresourceRange(
                     aspectMask = VkImageAspect.COLOR_BIT.i,
                     baseMipLevel = 0,
-                    levelCount = 1,
+                    levelCount = mipLevel,
                     baseArrayLayer = 0,
                     layerCount = 1
                 )   //The image and subresourceRange specify the image that is affected and the specific part of the image.

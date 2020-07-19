@@ -26,6 +26,7 @@ class SpringInput(val resourceLoader: ResourceLoader) {
     fun url(path: String) = resourceLoader.getResource(path).url
     fun string(path: String) = get(path).readAllBytes().toString(Charsets.UTF_8)
 
+
     fun loadImage(name: String, flipY: Boolean = false): Texture {
         val image = gli.loadImage(ImageIO.read(get(name)), flipY)
 //        gli.makeTexture2d()

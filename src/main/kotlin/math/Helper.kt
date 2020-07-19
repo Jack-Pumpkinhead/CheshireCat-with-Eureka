@@ -18,3 +18,4 @@ fun List<Float>.minIndex(): Int {
         return minI
     }
 }
+fun half(a: Int) = if (a > 1) a / 2 else 1

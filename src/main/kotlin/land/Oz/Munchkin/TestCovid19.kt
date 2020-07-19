@@ -14,6 +14,10 @@ import vulkan.pipelines.PipelineVertexOnly
 class TestCovid19(univ: Univ) : Primitive(univ) {
 
 
+    init {
+        instantiate = false
+    }
+
     lateinit var cov: PipelineVertexOnly.MultiObject
     lateinit var model:Model
 
@@ -23,7 +27,7 @@ class TestCovid19(univ: Univ) : Primitive(univ) {
         model.pos = randomVec3(10F)
 
         cov = univ.putVertexOnlyMultiObject(
-            univ.emeralds.covid19.find("Covid-19")!!.meshes[0]
+            univ.emeralds.get("Covid-19.dae")!!.find("Covid-19")!!.meshes[0]
         )
         cov.mutex.withLock {
             cov.objs += OzObjectSimple(

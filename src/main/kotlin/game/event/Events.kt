@@ -15,8 +15,10 @@ class Events {
     val afterRecreateSwapchain = Event<SwapchainRecreated>()
     val onTick = Event<Tick>()
 
+
     val onFrameStart = Event<FrameTick>()
     val onFrameEnd = Event<FrameTick>()
+
 
     val windowResize = Event<WindowResize>()
 

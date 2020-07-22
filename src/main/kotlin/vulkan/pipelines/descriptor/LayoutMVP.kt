@@ -24,6 +24,7 @@ import vulkan.util.SurfaceSwapchainSupport
 /**
  * Created by CowardlyLion on 2020/6/28 22:50
  */
+@Deprecated("move to OzDescriptorSets")
 class LayoutMVP(
     val vma: OzVMA,
     physicalDevice: OzPhysicalDevice,
@@ -65,7 +66,7 @@ class LayoutMVP(
             dstArrayElement = 0,    //start index
             descriptorCount = 1,    //count
             descriptorType = VkDescriptorType.UNIFORM_BUFFER,
-            bufferInfo = arrayOf(proj.descriptorBI()),
+            bufferInfo = arrayOf(proj.descriptorBI),
             imageInfo = arrayOf()
         )
         val writeView = WriteDescriptorSet(
@@ -74,7 +75,7 @@ class LayoutMVP(
             dstArrayElement = 0,    //start index
             descriptorCount = 1,    //count
             descriptorType = VkDescriptorType.UNIFORM_BUFFER,
-            bufferInfo = arrayOf(view.descriptorBI()),
+            bufferInfo = arrayOf(view.descriptorBI),
             imageInfo = arrayOf()
         )
 

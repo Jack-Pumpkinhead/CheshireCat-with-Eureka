@@ -1,5 +1,8 @@
 package vulkan
 
+import game.main.OzConfigurations
+import kotlinx.coroutines.runBlocking
+import vkk.VkFormat
 import vkk.VkImageUsage
 import vkk.VkSharingMode
 import vkk.entities.VkImage
@@ -8,8 +11,7 @@ import vkk.entities.VkSwapchainKHR
 import vkk.extensions.*
 import vkk.vk10.structs.Extent2D
 import vulkan.buffer.OzVMA
-import vulkan.concurrent.DrawCmds_old
-import vulkan.image.DepthImage
+import vulkan.image.*
 import vulkan.util.SurfaceSwapchainSupport
 
 class OzSwapchain(
@@ -20,6 +22,7 @@ class OzSwapchain(
     vma: OzVMA,
     commandPools: OzCommandPools,
     queues: OzQueues,
+    ozImages: OzImages,
     ozImageViews: OzImageViews
 ) {
 
@@ -49,16 +52,21 @@ class OzSwapchain(
 
 
     val images: List<VkImage>
-    val drawCmds: List<DrawCmds_old>
     val imageViews: List<VkImageView>
-    val depth: List<DepthImage>
+    lateinit var depth: List<OzImage2>
+    lateinit var MSAA: List<OzImage2>
+    lateinit var depth_MSAA: List<OzImage2>
 
     init {
         val imagesArray = device.device.getSwapchainImagesKHR(swapchain)
         images = List(imagesArray.size) { imagesArray[it] }
-        drawCmds = List(imagesArray.size) { DrawCmds_old(imagesArray[it]) }
         imageViews = images.map { ozImageViews.createColor(it, format) }
-        depth = List(images.size){ DepthImage(vma, device, commandPools, queues, extent2D, ozImageViews) }
+        runBlocking {
+            depth = List(images.size){ ozImages.createDepth(device.physicalDevice.depthFormat, extent2D)}
+            MSAA = List(images.size){ ozImages.create_MSAA(VkFormat.R8G8B8A8_SRGB, extent2D, OzConfigurations.MSAA)}
+            depth_MSAA = List(images.size){ ozImages.create_MSAADepth(device.physicalDevice.depthFormat, extent2D, OzConfigurations.MSAA)}
+
+        }
     }
 
 
@@ -66,9 +74,9 @@ class OzSwapchain(
 
 
     fun destroy() {
-        depth.forEach {
-            it.destroy()
-        }
+        depth_MSAA.forEach { device.destroy(it) }
+        MSAA.forEach { device.destroy(it) }
+        depth.forEach { device.destroy(it) }
         imageViews.forEach {
             device.device.destroy(it)
         }

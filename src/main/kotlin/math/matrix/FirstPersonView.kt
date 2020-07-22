@@ -72,6 +72,13 @@ class FirstPersonView(
             }
         }
     }
+    suspend fun assign(mat4: Mat4) {
+        pos.mutex.withLock {
+            mouseRotation.mutex.withLock {
+                View.view(pos.p, mouseRotation.rot, mat4)
+            }
+        }
+    }
 
 
 

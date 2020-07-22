@@ -63,7 +63,7 @@ class TransitionImageLayout(val commandPools: OzCommandPools, val queues: OzQueu
             )
             cb.end()
         }
-        fun generateMipmaps(
+        fun generateMipmaps_toShaderRead(
             image: VkImage,
             cb: CommandBuffer,
             mipLevels: Int = 1,

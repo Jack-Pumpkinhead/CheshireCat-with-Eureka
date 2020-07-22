@@ -12,6 +12,11 @@ import vulkan.drawing.ObjDynamic
  * Created by CowardlyLion on 2020/7/7 12:18
  */
 class TestFinGraph(univ: Univ): Primitive(univ) {
+
+    init {
+        instantiate = false
+    }
+
 //    val graph = randomFinGraph(23, 37)
     val graph = randomFinGraph(50, 37)
     val vGraph = VisualFinGraph(graph, pivotEnabled = true, pivot = Vec3(0, -5, 0))

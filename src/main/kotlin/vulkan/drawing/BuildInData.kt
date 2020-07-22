@@ -7,6 +7,15 @@ class BuildInData {
 
     companion object {
 
+        val v3c3Triangle =  floatArrayOf(
+            +0.0f, -0.5f, +0f, 1f, 0f, 0f,
+            +0.5f, +0.5f, +0f, 0f, 1f, 0f,
+            -0.5f, +0.5f, +0f, 0f, 0f, 1f
+        )
+        val iTriangle = intArrayOf(
+            0, 1, 2
+        )
+
         val vcRect = floatArrayOf(
             -0.5f, -0.5f, +0f, 1f, 0f, 0f,
             +0.5f, -0.5f, +0f, 0f, 1f, 0f,

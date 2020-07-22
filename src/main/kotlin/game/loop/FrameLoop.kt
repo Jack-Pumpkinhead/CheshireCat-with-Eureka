@@ -7,10 +7,8 @@ import game.main.Recorder3
 import game.main.Univ
 import game.window.OzWindow
 import kotlinx.coroutines.*
-import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withLock
 import mu.KotlinLogging
-import org.springframework.beans.factory.getBean
 import uno.glfw.glfw
 import vkk.VkResult
 import vkk.entities.VkFence
@@ -18,7 +16,6 @@ import vkk.extensions.acquireNextImageKHR
 import vulkan.*
 import vulkan.concurrent.SyncArray
 import vulkan.drawing.ObjDynamic
-import vulkan.drawing.PerImageConfiguration
 import vulkan.drawing.Submit
 import vulkan.pipelines.PipelineTextured
 import vulkan.pipelines.PipelineVertexOnly
@@ -36,20 +33,6 @@ class FrameLoop(val univ: Univ, val window: OzWindow) {
 //    val prepareChannel = BroadcastChannel<Preparation>()
 // use actor + action collection
 
-//    lateinit var configurations: List<PerImageConfiguration>
-
-    /*suspend fun makeConfigurations() {
-        val ctx = univ.vulkan.swapchainContext
-        val swapchain = ctx.getBean<OzSwapchain>()
-        val commandPools = ctx.getBean<OzCommandPools>()
-        val cb = commandPools.graphicCP.allocate().await()
-        configurations = swapchain.images.mapIndexed { index, vkImage ->
-            PerImageConfiguration(
-                index, vkImage, swapchain.imageViews[index], swapchain.depth[index],
-                ctx.getBean<OzFramebuffers>().fb_depth[index], ctx.getBean(), swapchain, ctx.getBean(), ctx.getBean()
-            )
-        }
-    }*/
 
 
     val size = univ.vulkan.swapchain.images.size
@@ -66,7 +49,6 @@ class FrameLoop(val univ: Univ, val window: OzWindow) {
     }*/
 
     val submit = Submit(univ.vulkan)
-//    val drawCmds = SyncArray<Recorder>()
     val drawCmds2 = SyncArray<Recorder2>()
     val drawCmds3 = SyncArray<Recorder3>()
     val dynamicObjs = SyncArray<ObjDynamic>()
@@ -144,12 +126,32 @@ class FrameLoop(val univ: Univ, val window: OzWindow) {
                 univ.vulkan.layoutMVP.view.mat4 = univ.matrices.fpv.getMatrix()
                 univ.vulkan.layoutMVP.update(imageIndex)
 
+                univ.vulkan.descriptorSets.mvp.proj.withLockS {
+                    univ.matrices.projPerspective.assign(mat4)
+                }
+                univ.vulkan.descriptorSets.mvp.view.withLockS {
+                    univ.matrices.fpv.assign(mat4)
+                }
+                univ.vulkan.descriptorSets.mvp.update(imageIndex)
+                univ.vulkan.descriptorSets.singleTexture.update()
 
 
+
+                /*
+                * begin cb
+                * begin renderpass
+                *   draw cmds
+                *       bind pipeline/vertex/index buffer/descriptor set
+                *       drawIndexed
+                * end renderpass
+                * end cb
+                * */
                 val cb = univ.vulkan.commandpools.graphicMutableCP.allocate().await()
 
-                val fb = univ.vulkan.framebuffers.fb_depth[imageIndex]
+//                val fb = univ.vulkan.framebuffers.fb_depth[imageIndex]
+                val fb = univ.vulkan.framebuffers.fb_depth_MSAA[imageIndex]
                 fb.begin(cb)
+
                 drawCmds2.withLock {cmds->
                     cmds.forEach {
                         it(cb, univ.vulkan.dms.dmDescriptors[imageIndex])
@@ -188,6 +190,10 @@ class FrameLoop(val univ: Univ, val window: OzWindow) {
                     }
                 }
 
+                univ.vulkan.graphicPipelines.pipelines.forEachActive_ifHas({}, { it.draw(cb, imageIndex) }, {})
+
+
+
 
                 fb.end(cb)
 
@@ -198,8 +204,6 @@ class FrameLoop(val univ: Univ, val window: OzWindow) {
                 }
             }
 
-//                    drawing.draw()
-//                    val result = runBlocking { configurations[imageIndex].submit(aquireS)}
 
 
             runBlocking { univ.events.onFrameEnd.send(FrameTick(tick, System.currentTimeMillis())) }
@@ -231,7 +235,6 @@ class FrameLoop(val univ: Univ, val window: OzWindow) {
         }
     }
 
-//    val drawing = Drawing(univ.vulkan, this)
 
 
 }

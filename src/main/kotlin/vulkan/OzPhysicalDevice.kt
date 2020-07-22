@@ -21,11 +21,16 @@ class OzPhysicalDevice(val pd: PhysicalDevice) {
     fun formatProperties(format: VkFormat) = pd.getFormatProperties(format)
 
     val depthFormat = findDepthFormat() //D32_SFLOAT_S8_UINT
+    val maxMSAA = maxMSAA()
 
     init {
         OzVulkan.logger.info {
-            depthFormat
+            "depthFormat: $depthFormat, maxMSAA: ${maxMSAA.i}"
         }
+        OzVulkan.logger.info {
+            "device feature, sampleRateShading: ${features.sampleRateShading}"
+        }
+
     }
 
     fun supported(): Boolean =
@@ -66,6 +71,20 @@ class OzPhysicalDevice(val pd: PhysicalDevice) {
         VkImageTiling.OPTIMAL,
         VkFormatFeature.DEPTH_STENCIL_ATTACHMENT_BIT
     )
+
+    fun maxMSAA(): VkSampleCount {
+        val sampleCountFlags = properties.limits.framebufferColorSampleCounts.and(
+            properties.limits.framebufferDepthSampleCounts
+        )
+        infix fun Int.has(b: VkSampleCount): Boolean = and(b.i) != 0
+        if(sampleCountFlags.has(VkSampleCount._64_BIT)) return VkSampleCount._64_BIT
+        if(sampleCountFlags.has(VkSampleCount._32_BIT)) return VkSampleCount._32_BIT
+        if(sampleCountFlags.has(VkSampleCount._16_BIT)) return VkSampleCount._16_BIT
+        if(sampleCountFlags.has(VkSampleCount._8_BIT)) return VkSampleCount._8_BIT
+        if(sampleCountFlags.has(VkSampleCount._4_BIT)) return VkSampleCount._4_BIT
+        if(sampleCountFlags.has(VkSampleCount._2_BIT)) return VkSampleCount._2_BIT
+        return VkSampleCount._1_BIT
+    }
 
 }
 

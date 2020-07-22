@@ -19,6 +19,7 @@ import vulkan.image.Samplers
 /**
  * Created by CowardlyLion on 2020/7/3 16:10
  */
+@Deprecated("aaa")
 class TextureSets(
     val device: OzDevice,
     val samplers: Samplers,

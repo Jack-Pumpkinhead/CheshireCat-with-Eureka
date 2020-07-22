@@ -8,6 +8,7 @@ import game.input.GLSLoader
 import game.input.SpringInput
 import game.loop.FrameLoop
 import game.loop.Gameloop
+import game.buildin.Buildin
 import game.main.OzConstants.HEIGHT
 import game.main.OzConstants.TITLE
 import game.main.OzConstants.WIDTH
@@ -92,9 +93,9 @@ class Univ(){
     val scope = CoroutineScope(Dispatchers.Default)
 
     val frameLoop = FrameLoop(this, window)
-
     val gameloop = Gameloop(this)
 
+    val loader = Buildin(this)
     val matrices = Matrices(events,window, gameloop)
 
 
@@ -111,7 +112,7 @@ class Univ(){
         }
 
         scope.launch {
-            val ticker = ticker(1000, 0, this.coroutineContext, TickerMode.FIXED_PERIOD)
+            val ticker = ticker(1000, 10, this.coroutineContext, TickerMode.FIXED_PERIOD)
             var i = 0L
             while (isActive) {
                 ticker.receive()

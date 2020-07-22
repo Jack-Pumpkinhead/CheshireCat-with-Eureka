@@ -17,6 +17,7 @@ import kotlin.math.max
 /**
  * Created by CowardlyLion on 2020/5/24 23:16
  */
+@Deprecated("aaa")
 class OzImage(
     val vma: OzVMA,
     val device: OzDevice,
@@ -25,7 +26,7 @@ class OzImage(
     val ozImageViews: OzImageViews,
     val springInput: SpringInput,
     val path: String,
-    val sampler: VkSampler,
+    val sampler: VkSampler, //也许分离image和sampler
     generateMipmap: Boolean = true
 ) {
     constructor(univ:Univ,path: String,sampler: VkSampler):this(
@@ -100,7 +101,7 @@ class OzImage(
         }
 
 
-        TransitionImageLayout.generateMipmaps(
+        TransitionImageLayout.generateMipmaps_toShaderRead(
             image = image.vkImage,
             cb = cbs[trans_shaderRead_mipmap],
             width = extent.width,

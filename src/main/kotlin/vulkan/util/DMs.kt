@@ -11,6 +11,7 @@ import vulkan.pipelines.pipelineLayout.OzPipelineLayouts
 /**
  * Created by CowardlyLion on 2020/6/15 23:06
  */
+@Deprecated("ddd")
 class DMs(
     val vma: OzVMA,
     val physicalDevice: OzPhysicalDevice,

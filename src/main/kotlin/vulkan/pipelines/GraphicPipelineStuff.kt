@@ -1,5 +1,6 @@
 package vulkan.pipelines
 
+import game.main.OzConfigurations
 import glm_.vec4.Vec4
 import vkk.*
 import vkk.vk10.structs.*
@@ -51,11 +52,22 @@ val rasterizationSCI = PipelineRasterizationStateCreateInfo(
 val multisampleSCI = PipelineMultisampleStateCreateInfo(
     sampleShadingEnable = false,
     rasterizationSamples = VkSampleCount._1_BIT,
+//    rasterizationSamples = OzConfigurations.MSAA,
     minSampleShading = 1.0f,
     sampleMask = null,
     alphaToCoverageEnable = false,
     alphaToOneEnable = false
 )
+val multisampleSCI_MSAA = PipelineMultisampleStateCreateInfo(
+    sampleShadingEnable = true,
+    rasterizationSamples = OzConfigurations.MSAA,
+    minSampleShading = 1.0f,
+    sampleMask = null,
+    alphaToCoverageEnable = false,
+    alphaToOneEnable = false
+)
+
+
 val colorBlendAttachmentState = PipelineColorBlendAttachmentState(
     colorWriteMask = VkColorComponent.R_BIT or VkColorComponent.G_BIT or VkColorComponent.B_BIT or VkColorComponent.A_BIT,
     blendEnable = false,

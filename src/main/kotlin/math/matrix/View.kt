@@ -16,6 +16,11 @@ class View(val pos: Vec3, val rot: Vec3) {
             .rotateXassign(-rot.x)
             .rotateYassign(-rot.y)
             .translateAssign(-pos)
+        fun view(pos: Vec3, rot: Vec3, res: Mat4) = res.identity()
+            .rotateZassign(-rot.z)
+            .rotateXassign(-rot.x)
+            .rotateYassign(-rot.y)
+            .translateAssign(-pos)
 
         fun viewVector(rot: Vec3): Vec3 {   //缺一个 inverse function.
             val res = glm.rotateX(Vec3(), Vec3(0, 0, 1), rot.x)

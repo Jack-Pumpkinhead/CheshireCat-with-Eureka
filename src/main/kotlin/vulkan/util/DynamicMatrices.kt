@@ -15,6 +15,7 @@ import vulkan.concurrent.SyncArray
 /**
  * Created by CowardlyLion on 2020/6/15 22:26
  */
+@Deprecated("ddd")
 class DynamicMatrices(val vma: OzVMA, physicalDevice: OzPhysicalDevice) {
 
     val matrices = SyncArray<Mat4>()    //two matrices an object

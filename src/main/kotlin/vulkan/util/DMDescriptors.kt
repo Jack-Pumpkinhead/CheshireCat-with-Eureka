@@ -14,6 +14,7 @@ import vulkan.OzVulkan
 /**
  * Created by CowardlyLion on 2020/6/15 22:51
  */
+@Deprecated("ddd")
 class DMDescriptors(
     val matrices: DynamicMatrices,
     val descriptorSets: VkDescriptorSet,

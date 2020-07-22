@@ -3,9 +3,7 @@ package vulkan
 import com.google.common.collect.TreeMultiset
 import game.main.OzConstants.Extensions
 import kotlinx.coroutines.*
-import vkk.VkCommandPoolCreate
-import vkk.VkFenceCreate
-import vkk.VkFenceCreateFlags
+import vkk.*
 import vkk.entities.VkSemaphore
 import vkk.identifiers.Queue
 import vkk.vk10.*
@@ -15,6 +13,7 @@ import vkk.vk10.structs.DeviceQueueCreateInfo
 import vkk.vk10.structs.FenceCreateInfo
 import vulkan.concurrent.OzCommandPool
 import vulkan.concurrent.OzQueue
+import vulkan.image.OzImage2
 import vulkan.util.SurfaceSwapchainSupport
 
 class OzDevice(
@@ -74,6 +73,17 @@ class OzDevice(
 
 
 
+    init {
+        checkFormatProperties(VkFormat.R8G8B8A8_SRGB)
+    }
+
+    fun checkFormatProperties(format: VkFormat) {
+        val formatProperties = physicalDevice.formatProperties(format)
+        if (!formatProperties.optimalTilingFeatures.has(VkFormatFeature.SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
+            OzVulkan.logger.error { "optimalTilingFeatures don't have VkFormatFeature.SAMPLED_IMAGE_FILTER_LINEAR_BIT !" }
+        }
+
+    }
 
     fun destroy() {
         device.waitIdle()
@@ -81,6 +91,11 @@ class OzDevice(
         OzVulkan.logger.info {
             "${javaClass.name} destroyed"
         }
+    }
+
+    fun destroy(image: OzImage2) {
+        device.destroy(image.imageView)
+        image.image.destroy()
     }
 
 

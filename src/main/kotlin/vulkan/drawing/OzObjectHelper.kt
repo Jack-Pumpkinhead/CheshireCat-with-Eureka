@@ -67,7 +67,7 @@ suspend fun Univ.getMultiObject(mesh: Mesh): PipelineTextured.MultiObject {
     val mObj = PipelineTextured.MultiObject(
         pipeline = vulkan.graphicPipelines.hellotexture.graphicsPipeline,
         pipelineLayout = vulkan.graphicPipelines.hellotexture.layout,
-        data = vulkan.buffer.staticObject_deviceLocal(mesh.vertexArray(), mesh.indices.toIntArray()),
+        data = vulkan.buffer.staticObject_deviceLocal(mesh.vertexTex(), mesh.indices.toIntArray()),
         layoutMVP = vulkan.layoutMVP,
         textureSets = vulkan.textureSets
     )

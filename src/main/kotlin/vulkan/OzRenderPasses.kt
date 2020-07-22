@@ -1,5 +1,6 @@
 package vulkan
 
+import game.main.OzConfigurations
 import org.lwjgl.vulkan.VK10
 import vkk.*
 import vkk.entities.VkRenderPass
@@ -10,6 +11,7 @@ class OzRenderPasses(val device: OzDevice, format: VkFormat) {
 
     val renderpass: VkRenderPass
     val renderpass_depth: VkRenderPass
+    val renderpass_depth_MSAA: VkRenderPass
 
     fun presentableAttach(format: VkFormat) = AttachmentDescription(
         format = format,
@@ -37,6 +39,48 @@ class OzRenderPasses(val device: OzDevice, format: VkFormat) {
         initialLayout = VkImageLayout.UNDEFINED,
         finalLayout = VkImageLayout.DEPTH_STENCIL_ATTACHMENT_OPTIMAL
     )
+    fun colorAttach_MSAA(format: VkFormat, samples: VkSampleCount) = AttachmentDescription(
+        format = format,
+        samples = samples,
+
+        loadOp = VkAttachmentLoadOp.CLEAR,
+        storeOp = VkAttachmentStoreOp.STORE,
+
+        stencilLoadOp = VkAttachmentLoadOp.DONT_CARE,
+        stencilStoreOp = VkAttachmentStoreOp.DONT_CARE,
+
+        initialLayout = VkImageLayout.UNDEFINED,
+        finalLayout = VkImageLayout.COLOR_ATTACHMENT_OPTIMAL
+    )
+    fun depthAttach_MSAA(format: VkFormat, samples: VkSampleCount) = AttachmentDescription(
+        format = format,
+        samples = samples,
+
+        loadOp = VkAttachmentLoadOp.CLEAR,
+        storeOp = VkAttachmentStoreOp.DONT_CARE,
+
+        stencilLoadOp = VkAttachmentLoadOp.CLEAR,
+        stencilStoreOp = VkAttachmentStoreOp.DONT_CARE,
+
+        initialLayout = VkImageLayout.UNDEFINED,
+        finalLayout = VkImageLayout.DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+    )
+    fun resolveAttach(format: VkFormat) = AttachmentDescription(
+        format = format,
+        samples = VkSampleCount._1_BIT,
+
+        loadOp = VkAttachmentLoadOp.DONT_CARE,
+        storeOp = VkAttachmentStoreOp.STORE,
+
+        stencilLoadOp = VkAttachmentLoadOp.DONT_CARE,
+        stencilStoreOp = VkAttachmentStoreOp.DONT_CARE,
+
+        initialLayout = VkImageLayout.UNDEFINED,
+        finalLayout = VkImageLayout.PRESENT_SRC_KHR
+    )
+
+
+
 
     val colorRef0 = AttachmentReference(
         attachment = 0, //index of attachmentDescription array  //of what?
@@ -46,6 +90,11 @@ class OzRenderPasses(val device: OzDevice, format: VkFormat) {
         attachment = 1, //index of attachmentDescription array  //of what?
         layout = VkImageLayout.DEPTH_STENCIL_ATTACHMENT_OPTIMAL
     )
+    val resolveRef2 = AttachmentReference(
+        attachment = 2,
+        layout = VkImageLayout.COLOR_ATTACHMENT_OPTIMAL
+    )
+
 
     val subpassDependency = SubpassDependency(
         srcSubpass = VK10.VK_SUBPASS_EXTERNAL,
@@ -108,12 +157,35 @@ class OzRenderPasses(val device: OzDevice, format: VkFormat) {
             resolveAttachments = null,
             preserveAttachments = null
         )
+        val subpass_0_depth_MSAA = SubpassDescription(
+            pipelineBindPoint = VkPipelineBindPoint.GRAPHICS,
+            colorAttachments = arrayOf(colorRef0), //The index of the attachment in this array is directly referenced from the fragment shader with the layout(location = 0) out vec4 outColor directive
+            // layout in fragment shader --- colorAttachments     then map to attachments
+            depthStencilAttachment = depthRef1,
+            inputAttachments = null,
+            resolveAttachments = arrayOf(resolveRef2),
+            preserveAttachments = null
+        )
 
 
 
         renderpass_depth = create(
             attachments = arrayOf(presentableAttach(format), depthAttach(device.physicalDevice.depthFormat)),
             subpasses = arrayOf(subpass_0_depth),
+//            dependencies = arrayOf(subpassDependency,depthDependencyRead,depthDependencyWrite)
+            dependencies = arrayOf(subpassDependency)
+        )
+
+
+        val samples = OzConfigurations.MSAA
+
+        renderpass_depth_MSAA = create(
+            attachments = arrayOf(
+                colorAttach_MSAA(format, samples),
+                depthAttach_MSAA(device.physicalDevice.depthFormat, samples),
+                resolveAttach(format)
+            ),
+            subpasses = arrayOf(subpass_0_depth_MSAA),
 //            dependencies = arrayOf(subpassDependency,depthDependencyRead,depthDependencyWrite)
             dependencies = arrayOf(subpassDependency)
         )

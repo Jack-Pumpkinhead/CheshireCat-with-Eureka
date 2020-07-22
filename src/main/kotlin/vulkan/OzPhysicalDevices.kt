@@ -1,5 +1,6 @@
 package vulkan
 
+import game.main.OzConfigurations
 import vkk.vk10.physicalDevices
 import vulkan.util.SurfaceSwapchainSupport
 
@@ -29,6 +30,8 @@ class OzPhysicalDevices(val instance: OzInstance, val surface: OzSurface) {
             physicalDevice = list[0]
             surfaceSupport = ssList[0]
         }
+
+        OzConfigurations.MSAA = physicalDevice.maxMSAA
     }
 
 }

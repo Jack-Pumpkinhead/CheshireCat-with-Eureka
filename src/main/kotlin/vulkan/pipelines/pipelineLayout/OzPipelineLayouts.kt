@@ -50,9 +50,8 @@ class OzPipelineLayouts(val device: OzDevice, val descriptorSetLayouts: SetLayou
     )
 
 
-
     val list = listOf(
-        empty, uniformSingle,uniformDynamic,mvp
+        empty, uniformSingle, uniformDynamic, mvp, mvp_sampler
     )
 
     fun destroy() {

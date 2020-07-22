@@ -30,7 +30,7 @@ class TestRectangle2(univ: Univ): Primitive(univ) {
         model1 = univ.vulkan.layoutMVP.model.fetch()
 
         model0.scale = 10F
-//        model0.scale = 10F
+        model1.pos.z = 2F
 
         obj0 = PipelineBasic2.ObjStatic(
             univ,

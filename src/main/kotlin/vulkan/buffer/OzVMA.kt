@@ -147,7 +147,10 @@ class OzVMA(
     )
 
 
-    fun createImage_deviceLocal(imageCI: ImageCreateInfo): VmaImage = createImage_deviceLocal(
+    fun createImage_deviceLocal(
+        imageCI: ImageCreateInfo,
+        memoryProperty: VkMemoryPropertyFlags = VkMemoryProperty.DEVICE_LOCAL_BIT.i
+    ): VmaImage = createImage_deviceLocal(
         imageCI.flags,
         imageCI.imageType.i,
         imageCI.format.i,
@@ -160,12 +163,13 @@ class OzVMA(
         imageCI.sharingMode.i,
         imageCI.queueFamilyIndices,
         imageCI.initialLayout.i,
-        imageCI.next
+        imageCI.next,
+        memoryProperty
     )
     fun createImage_deviceLocal(
         flags: Int = VkImageCreate(0).i,
         imageType: Int = VkImageType._2D.i,
-        format: Int = VkFormat.B8G8R8A8_SRGB.i,
+        format: Int = VkFormat.R8G8B8A8_SRGB.i,
         extent: Extent3D,
         mipLevels: Int = 1,
         arrayLayers: Int = 1,
@@ -175,7 +179,8 @@ class OzVMA(
         sharingMode: Int = VkSharingMode.EXCLUSIVE.i,
         queueFamilyIndices: IntArray? = null,
         initialLayout: Int = VkImageLayout.UNDEFINED.i,
-        pNext: Long = 0
+        pNext: Long = 0,
+        memoryProperty: VkMemoryPropertyFlags = VkMemoryProperty.DEVICE_LOCAL_BIT.i
     ): VmaImage = Stack {
         val extent3D = VkExtent3D.mallocStack(it).set(extent.width, extent.height, extent.depth)
         val queuefamilyIndices = if (queueFamilyIndices != null) {
@@ -200,7 +205,7 @@ class OzVMA(
         val vmaAllocationCI = VmaAllocationCreateInfo.mallocStack(it).set(
             0,
             Vma.VMA_MEMORY_USAGE_GPU_ONLY,
-            VkMemoryProperty.DEVICE_LOCAL_BIT.i,
+            memoryProperty,
             0,
             0,  // vma library internally queries Vulkan for memory types supported for that buffer or image (function vkGetBufferMemoryRequirements()) and uses only one of these types.
             NULL,

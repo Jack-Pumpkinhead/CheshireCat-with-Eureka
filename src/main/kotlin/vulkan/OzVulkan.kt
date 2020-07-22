@@ -15,12 +15,12 @@ import vkk.vk10.structs.Extent2D
 import vulkan.buffer.OzBuffer
 import vulkan.command.CopyBuffer
 import vulkan.buffer.OzVMA
-import vulkan.command.DrawCmd
-import vulkan.drawing.OzObjects_deprecated
+import vulkan.command.OzCommands
 import vulkan.image.OzImages
 import vulkan.image.Samplers
 import vulkan.pipelines.*
 import vulkan.pipelines.descriptor.LayoutMVP
+import vulkan.pipelines.descriptor.OzDescriptorSets
 import vulkan.pipelines.descriptor.SetLayouts
 import vulkan.pipelines.descriptor.TextureSets
 import vulkan.pipelines.pipelineLayout.OzUniformMatrixDynamic
@@ -55,6 +55,7 @@ class OzVulkan(val univ: Univ, val window: OzWindow) {
     var buffer:OzBuffer
     var images: OzImages
     var imageViews: OzImageViews
+    var commands: OzCommands
 
     var shadermodules:OzShaderModules
     var seyLayouts:SetLayouts
@@ -63,6 +64,7 @@ class OzVulkan(val univ: Univ, val window: OzWindow) {
     var uniformMatrixDynamic:OzUniformMatrixDynamic
     var dms: DMs
     var layoutMVP:LayoutMVP
+    var descriptorSets: OzDescriptorSets
     var samplers:Samplers
     var textureSets:TextureSets
 
@@ -82,6 +84,7 @@ class OzVulkan(val univ: Univ, val window: OzWindow) {
 
             bean<OzVMA>(destroyMethodName = "destroy")
             bean<OzBuffer>()
+            bean<OzCommands>()
 
             bean<OzImageViews>()
 
@@ -98,9 +101,9 @@ class OzVulkan(val univ: Univ, val window: OzWindow) {
 
         }
         val extraBeans = beans() {
-            bean<OzObjects_deprecated>()
             bean<DMs>()
             bean<LayoutMVP>(destroyMethodName = "destroy")
+            bean<OzDescriptorSets>(destroyMethodName = "destroy")
             bean<Samplers>(destroyMethodName = "destroy")
             bean<OzImages>(destroyMethodName = "destroy")
 
@@ -125,6 +128,7 @@ class OzVulkan(val univ: Univ, val window: OzWindow) {
 
         vma = context.getBean()
         buffer = context.getBean()
+        commands = context.getBean()
 
         imageViews = context.getBean()
         shadermodules = context.getBean()
@@ -132,8 +136,10 @@ class OzVulkan(val univ: Univ, val window: OzWindow) {
         descriptorPools = context.getBean()
         pipelineLayouts = context.getBean()
         uniformMatrixDynamic = context.getBean()
+
         dms = context.getBean()
         layoutMVP = context.getBean()
+        descriptorSets = context.getBean()
         samplers = context.getBean()
         images = context.getBean()
         textureSets = context.getBean()
@@ -150,15 +156,13 @@ class OzVulkan(val univ: Univ, val window: OzWindow) {
     var renderPass:OzRenderPasses
     var graphicPipelines:OzGraphicPipelines
     var framebuffers:OzFramebuffers
-//    var drawImage:DrawImage
-    var drawCmd:DrawCmd
 
 
     val swapchainBeans = beans {
         bean<Extent2D> { Extent2D(ref<OzWindow>().framebufferSize) }
         bean<OzSwapchain>(destroyMethodName = "destroy") {
             OzSwapchain(ref(), ref(), ref(),
-                oldSwapchain, ref(), ref(), ref(), ref()
+                oldSwapchain, ref(), ref(), ref(), ref(), ref()
             )
         }
 
@@ -168,9 +172,6 @@ class OzVulkan(val univ: Univ, val window: OzWindow) {
 
         bean<OzGraphicPipelines>(destroyMethodName = "destroy")
         bean<OzFramebuffers>(destroyMethodName = "destroy")
-
-//        bean<DrawImage>(destroyMethodName = "destroy")
-        bean<DrawCmd>()
 
     }
 
@@ -184,8 +185,6 @@ class OzVulkan(val univ: Univ, val window: OzWindow) {
         renderPass = swapchainContext.getBean()
         graphicPipelines = swapchainContext.getBean()
         framebuffers = swapchainContext.getBean()
-//        drawImage = swapchainContext.getBean()
-        drawCmd = swapchainContext.getBean()
     }
 
     fun recreateSwapchainContext() {
@@ -201,8 +200,6 @@ class OzVulkan(val univ: Univ, val window: OzWindow) {
         renderPass = swapchainContext.getBean()
         graphicPipelines = swapchainContext.getBean()
         framebuffers = swapchainContext.getBean()
-//        drawImage = swapchainContext.getBean()
-        drawCmd = swapchainContext.getBean()
     }
 
 

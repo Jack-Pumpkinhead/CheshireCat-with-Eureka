@@ -13,6 +13,7 @@ import vulkan.command.TransitionImageLayout
 /**
  * Created by CowardlyLion on 2020/6/2 22:49
  */
+@Deprecated("aaa")
 class DepthImage(
     val vma: OzVMA,
     val device: OzDevice,
@@ -26,10 +27,10 @@ class DepthImage(
     val imageView: VkImageView
 
     init {
-        image = runBlocking {
+//        image = runBlocking {
 //            vma.createImage_deviceLocal_depth(format, extent2D)
-            vma.createImage_deviceLocal(depth(format, extent2D))
-        }
+//        }
+        image = vma.createImage_deviceLocal(depth(format, extent2D))
         imageView = ozImageViews.depth(image.vkImage, format)
 
 

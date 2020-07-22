@@ -23,6 +23,22 @@ fun dstsampled(format: VkFormat, extent3D: Extent3D, mipLevels: Int = 1) = Image
     sharingMode = VkSharingMode.EXCLUSIVE,
     queueFamilyIndices = null   //with sharingMode
 )
+fun multiSampling(format: VkFormat, extent2D: Extent2D, samples: VkSampleCount) = ImageCreateInfo(
+    flags = VkImageCreate(0).i,
+    imageType = VkImageType._2D,
+    extent = Extent3D(extent2D, 1),
+    mipLevels = 1,
+    arrayLayers = 1,
+    format = format,
+    tiling = VkImageTiling.OPTIMAL,
+    initialLayout = VkImageLayout.UNDEFINED,
+    usage = VkImageUsage.TRANSIENT_ATTACHMENT_BIT.or(VkImageUsage.COLOR_ATTACHMENT_BIT),
+    samples = samples,
+    sharingMode = VkSharingMode.EXCLUSIVE,
+    queueFamilyIndices = null   //with sharingMode
+)
+
+
 fun sampled(format: VkFormat, extent3D: Extent3D, mipLevels: Int = 1) = ImageCreateInfo(
     flags = VkImageCreate(0).i,
     imageType = VkImageType._2D,
@@ -50,6 +66,21 @@ fun depth(format: VkFormat, extent2D: Extent2D) = ImageCreateInfo(
     initialLayout = VkImageLayout.UNDEFINED,
     usage = VkImageUsage.DEPTH_STENCIL_ATTACHMENT_BIT.i,
     samples = VkSampleCount._1_BIT,
+    sharingMode = VkSharingMode.EXCLUSIVE,
+    queueFamilyIndices = null   //with sharingMode
+)
+
+fun depth_MSAA(format: VkFormat, extent2D: Extent2D, samples: VkSampleCount) = ImageCreateInfo(
+    flags = VkImageCreate(0).i,
+    imageType = VkImageType._2D,
+    extent = Extent3D(extent2D, 1),
+    mipLevels = 1,
+    arrayLayers = 1,
+    format = format,
+    tiling = VkImageTiling.OPTIMAL,
+    initialLayout = VkImageLayout.UNDEFINED,
+    usage = VkImageUsage.DEPTH_STENCIL_ATTACHMENT_BIT.i,
+    samples = samples,
     sharingMode = VkSharingMode.EXCLUSIVE,
     queueFamilyIndices = null   //with sharingMode
 )

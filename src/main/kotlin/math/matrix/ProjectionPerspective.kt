@@ -25,6 +25,8 @@ class ProjectionPerspective(val window: OzWindow, val events: Events) {
     val near = 0.1F
     val far = 100F
 
+    var size = window.framebufferSize
+
 //    var mat = glm.perspectiveFov(60F, window.framebufferSize, 0.1F, 100F)
     var mat = calc(window.framebufferSize)
 
@@ -48,6 +50,8 @@ class ProjectionPerspective(val window: OzWindow, val events: Events) {
         return glm.perspectiveFovLhZo(fov, size, near, far)
     }
 
+
+
 //        return Mat4(
 //            (1 / a) * size.y/size.x, 0, 0, 0,
 //            0, 1 / a, 0, 0,
@@ -70,11 +74,15 @@ class ProjectionPerspective(val window: OzWindow, val events: Events) {
 
 
     suspend fun update(size: Vec2i) {
+        this.size = size
         mat = calc(size)
 //        mat = Mat4()
 //        mutex.withLock {
 //            glm.perspectiveFovRh(100F, size, 0.01F, 10F, mat)
 //        }
+    }
+    fun assign(mat: Mat4) {
+        glm.perspectiveFovLhZo(fov, size, near, far, mat)
     }
 
     suspend fun copy(): Mat4 {

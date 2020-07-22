@@ -20,7 +20,7 @@ class MatrixBufferC(val vma: OzVMA) {
     val buffer = vma.of_uniform(bytes)
 
     val mutex = Mutex()
-    suspend fun lockOut(action: suspend (MatrixBufferC) -> Unit) {
+    suspend fun withLockS(action: suspend MatrixBufferC.() -> Unit) {
         mutex.withLock {
             action(this)
         }
@@ -37,7 +37,7 @@ class MatrixBufferC(val vma: OzVMA) {
 //           buffer.memory.flush()
     }
 
-    fun descriptorBI() = DescriptorBufferInfo(
+    val descriptorBI = DescriptorBufferInfo(
         buffer = buffer.vkBuffer,
         offset = VkDeviceSize(0),
         range = VkDeviceSize(bytes)

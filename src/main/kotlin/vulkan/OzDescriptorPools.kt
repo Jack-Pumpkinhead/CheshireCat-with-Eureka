@@ -25,18 +25,18 @@ class OzDescriptorPools(val device: OzDevice, surfaceSupport: SurfaceSwapchainSu
                 poolSizes = arrayOf(
                     DescriptorPoolSize(
                         type = VkDescriptorType.UNIFORM_BUFFER,
-                        descriptorCount = surfaceSupport.imageCount * 1 //maybe more
+                        descriptorCount = surfaceSupport.imageCount * 2 //maybe more
                     ),
                     DescriptorPoolSize(
                         type = VkDescriptorType.UNIFORM_BUFFER_DYNAMIC,
-                        descriptorCount = surfaceSupport.imageCount
+                        descriptorCount = surfaceSupport.imageCount * 2
                     ),
                     DescriptorPoolSize(
                         type = VkDescriptorType.COMBINED_IMAGE_SAMPLER,
-                        descriptorCount = surfaceSupport.imageCount
+                        descriptorCount = surfaceSupport.imageCount * 2
                     )
                 ),
-                maxSets = surfaceSupport.imageCount * 3 + 1
+                maxSets = surfaceSupport.imageCount * 9 + 1
             )
         )
         pool = OzDescriptorPool(device, descriptorPool)
@@ -49,10 +49,10 @@ class OzDescriptorPools(val device: OzDevice, surfaceSupport: SurfaceSwapchainSu
             poolSizes = arrayOf(
                 DescriptorPoolSize(
                     type = VkDescriptorType.COMBINED_IMAGE_SAMPLER,
-                    descriptorCount = images.list.size
+                    descriptorCount = images.list.size * 2
                 )
             ),
-            maxSets = images.list.size
+            maxSets = images.list.size * 2
         )))
 
     val pools = listOf(pool, imagePool)

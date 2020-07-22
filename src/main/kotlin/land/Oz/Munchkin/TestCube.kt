@@ -9,7 +9,12 @@ import vulkan.pipelines.PipelineTextured
 /**
  * Created by CowardlyLion on 2020/7/3 16:40
  */
+@Deprecated("aa")
 class TestCube(univ: Univ) : Primitive(univ) {
+
+    init {
+        instantiate = false
+    }
 
     lateinit var cube: PipelineTextured.ObjStatic
     lateinit var model0: Model

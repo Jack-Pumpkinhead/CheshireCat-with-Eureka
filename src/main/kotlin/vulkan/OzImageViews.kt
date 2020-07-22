@@ -1,6 +1,5 @@
 package vulkan
 
-import mu.KotlinLogging
 import vkk.VkFormat
 import vkk.VkImageAspect
 import vkk.VkImageViewCreate
@@ -14,7 +13,7 @@ import vkk.vk10.structs.ImageViewCreateInfo
 
 class OzImageViews(val device: OzDevice) {
 
-    fun createColor(image: VkImage, format: VkFormat, mipLevel: Int = 1): VkImageView {
+    fun createColor(image: VkImage, format: VkFormat, mipLevels: Int = 1): VkImageView {
         return device.device.createImageView(
             ImageViewCreateInfo(
                 flags = VkImageViewCreate(0).i,
@@ -25,7 +24,7 @@ class OzImageViews(val device: OzDevice) {
                 subresourceRange = ImageSubresourceRange(
                     aspectMask = VkImageAspect.COLOR_BIT.i,
                     baseMipLevel = 0,
-                    levelCount = mipLevel,
+                    levelCount = mipLevels,
                     baseArrayLayer = 0,
                     layerCount = 1
                 )
@@ -50,7 +49,7 @@ class OzImageViews(val device: OzDevice) {
             )
         )
     }
-fun depth(image: VkImage, format: VkFormat): VkImageView {
+    fun depth(image: VkImage, format: VkFormat): VkImageView {
         return device.device.createImageView(
             ImageViewCreateInfo(
                 flags = VkImageViewCreate(0).i,

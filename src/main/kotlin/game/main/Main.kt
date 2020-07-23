@@ -107,12 +107,10 @@ class Univ(){
 
     fun start() {
 
-        runBlocking {
-            events.launch(scope)
-        }
+        events.launch(scope)
 
         scope.launch {
-            val ticker = ticker(1000, 10, this.coroutineContext, TickerMode.FIXED_PERIOD)
+            val ticker = ticker(1000, 0, this.coroutineContext, TickerMode.FIXED_PERIOD)
             var i = 0L
             while (isActive) {
                 ticker.receive()
@@ -128,6 +126,12 @@ class Univ(){
             gameloop.loop()
         }
 
+        runBlocking {
+            gameloop.initialized.join()
+            logger.info {
+                "game primitives initialized"
+            }
+        }
 
         frameLoop.loop()
         gameloop.stop()

@@ -6,10 +6,10 @@ import org.lwjgl.system.MemoryUtil
 import org.lwjgl.util.vma.Vma
 import vkk.entities.VkBuffer
 
-class VmaBuffer(val pAllocator: Long, val pBuffer: Long, val pAllocation: Long) {
+class VmaBuffer(val pAllocator: Long, val pBuffer: Long, val pAllocation: Long, bytes: Int) {
 
     val vkBuffer = VkBuffer(pBuffer)
-    val memory = VmaAllocation(pAllocator, pAllocation)
+    val memory = VmaAllocation(pAllocator, pAllocation, bytes)
 
     fun fill(arr: FloatArray) {
         if (arr.size < 10000) {

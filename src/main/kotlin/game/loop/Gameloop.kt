@@ -35,6 +35,7 @@ class Gameloop(val univ: Univ) {
 
 
     val complete = Job()
+    val initialized = Job()
 
 //    val task = SyncArray<TickTimeAction>()
 
@@ -45,11 +46,13 @@ class Gameloop(val univ: Univ) {
 
         univ.gameObjects.apply {
             mutex.withLock {
-                primitives.forEach{
+                primitives.forEach {
                     it.initialize()
                 }
             }
         }
+
+        initialized.complete()
 
         while (running) {
             ticker.receive()
@@ -69,12 +72,12 @@ class Gameloop(val univ: Univ) {
                 }
             }
 
-           /* task.withLockS {
-                it.forEach {
-                    it(tick, timemillis)
-                }
-            }
-*/
+            /* task.withLockS {
+                 it.forEach {
+                     it(tick, timemillis)
+                 }
+             }
+ */
 
             tps.record()
         }

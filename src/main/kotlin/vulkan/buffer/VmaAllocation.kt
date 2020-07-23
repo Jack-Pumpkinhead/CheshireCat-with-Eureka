@@ -12,7 +12,11 @@ import java.nio.Buffer
 /**
  * Created by CowardlyLion on 2020/5/25 17:45
  */
-class VmaAllocation(val pAllocator: Long, val pAllocation: Long) {
+class VmaAllocation(
+    val pAllocator: Long,
+    val pAllocation: Long,
+    var bytes: Int = -1    //VmaImage不知道bytes
+) {
 
     var mapped: Long = MemoryUtil.NULL
 
@@ -44,6 +48,12 @@ class VmaAllocation(val pAllocator: Long, val pAllocation: Long) {
         }
 //        flushMapped(0,buffer.remSize.L)
     }
+
+//    fun warpByteBuffer() = MemoryUtil.memByteBuffer(map(), bytes)
+//    fun warpFloatBuffer() = MemoryUtil.memByteBuffer(map(), bytes).asFloatBuffer()
+//    fun warpIntBuffer() = MemoryUtil.memByteBuffer(map(), bytes).asIntBuffer()
+
+
 
     fun flush(offset: Long = 0, size: Long = VkDeviceSize.WHOLE_SIZE.L) {
         Vma.vmaFlushAllocation(pAllocator, pAllocation, offset, size)

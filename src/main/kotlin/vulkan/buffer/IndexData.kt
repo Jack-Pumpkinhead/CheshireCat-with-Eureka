@@ -1,5 +1,6 @@
 package vulkan.buffer
 
+import glm_.value
 import kool.BYTES
 import vkk.VkIndexType
 import vkk.entities.VkDeviceSize
@@ -16,7 +17,6 @@ class IndexData(
     val copyBuffer: CopyBuffer,
     var arr: IntArray,
     var indexBuffer: VmaBuffer,    //device local
-    var bufferSize: Int,
     var isDynamic: Boolean
 ) {
 
@@ -29,9 +29,10 @@ class IndexData(
         )
     }
     fun draw(cb: CommandBuffer) {
-        if (bufferSize > 1) {
+        val ints = indexBuffer.memory.bytes / Int.BYTES
+        if (ints > 0) {
             cb.drawIndexed(
-                indexCount = bufferSize / Int.BYTES,
+                indexCount = ints,
                 instanceCount = 1,
                 firstIndex = 0,
                 vertexOffset = 0,
@@ -40,8 +41,7 @@ class IndexData(
         }
     }
 
-    fun replaceBuffer(buffer: VmaBuffer, size: Int) {
-        bufferSize = size
+    fun replaceBuffer(buffer: VmaBuffer) {
         val old = indexBuffer
         indexBuffer = buffer
         old.destroy()
@@ -50,20 +50,20 @@ class IndexData(
     suspend fun reload_deviceLocal() {
         if (isDynamic) {
             isDynamic = false
-            val bytes = arr.size * Int.BYTES
-            replaceBuffer(buffer.indexBuffer_device_local(arr), bytes)
+            replaceBuffer(buffer.indexBuffer_device_local(arr))
             return
         }
 
         if (arr.isEmpty()) {
-            if (bufferSize > 1) {
-                replaceBuffer(vma.of_IndexBuffer_device_local(1), 1)
+            if (indexBuffer.memory.bytes > 1) {
+                replaceBuffer(vma.of_IndexBuffer_device_local(1))
             }
             return
         }
         val bytes = arr.size * Int.BYTES
+        val bufferSize = indexBuffer.memory.bytes
         if (bytes > bufferSize || bytes < bufferSize / 2) {
-            replaceBuffer(buffer.indexBuffer_device_local(arr), bytes)
+            replaceBuffer(buffer.indexBuffer_device_local(arr))
         } else {
             val staging = vma.createBuffer_indexStaging(bytes)
             staging.fill(arr)
@@ -76,20 +76,20 @@ class IndexData(
     fun reload_Dynamic() {
         if (!isDynamic) {
             isDynamic = true
-            val bytes = arr.size * Int.BYTES
-            replaceBuffer(buffer.indexBuffer(arr), bytes)
+            replaceBuffer(buffer.indexBuffer(arr))
             return
         }
 
         if (arr.isEmpty()) {
-            if (bufferSize > 1) {
-                replaceBuffer(vma.indexBuffer(1), 1)
+            if (indexBuffer.memory.bytes > 1) {
+                replaceBuffer(vma.indexBuffer(1))
             }
             return
         }
         val bytes = arr.size * Int.BYTES
+        val bufferSize = indexBuffer.memory.bytes
         if (bytes > bufferSize || bytes < bufferSize / 2) {
-            replaceBuffer(buffer.indexBuffer(arr), bytes)
+            replaceBuffer(buffer.indexBuffer(arr))
         } else {
             indexBuffer.fill(arr)
         }

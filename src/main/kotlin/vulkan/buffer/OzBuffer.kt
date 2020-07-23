@@ -24,6 +24,7 @@ class OzBuffer(val vma: OzVMA, val copyBuffer: CopyBuffer) {
         return deviceLocal
     }
     fun vertexBuffer(arr: FloatArray): VmaBuffer {
+        if(arr.isEmpty()) return vma.vertexBuffer(1)
         val bytes = arr.size * Float.BYTES
         val buffer = vma.vertexBuffer(bytes)
         buffer.fill(arr)
@@ -46,6 +47,7 @@ class OzBuffer(val vma: OzVMA, val copyBuffer: CopyBuffer) {
     }
 
     fun indexBuffer(arr: IntArray): VmaBuffer {
+        if(arr.isEmpty()) return vma.indexBuffer(1)
         val bytes = arr.size * Int.BYTES
         val buffer = vma.indexBuffer(bytes)
         buffer.fill(arr)

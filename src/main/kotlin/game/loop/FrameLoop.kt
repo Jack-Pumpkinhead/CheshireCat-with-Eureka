@@ -117,6 +117,12 @@ class FrameLoop(val univ: Univ, val window: OzWindow) {
             runBlocking {
 
 
+                univ.gameObjects.mutex.withLock {
+                    univ.gameObjects.primitives.forEach {
+                        it.updateBuffer(imageIndex)
+                    }
+                }
+
                 univ.events.descripterSetUpdate.send(DescripterSetUpdate(imageIndex))
                 univ.vulkan.dms.update(imageIndex)  //update before record
 

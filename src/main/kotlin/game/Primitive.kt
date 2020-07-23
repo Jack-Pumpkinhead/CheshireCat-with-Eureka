@@ -16,6 +16,10 @@ open class Primitive(val univ: Univ) {
 
     open suspend fun gameloop(tick: Long, timemillis: Long) {
 
+    }
+
+    //before update descriptor set
+    open suspend fun updateBuffer(imageIndex: Int) {
 
     }
 

@@ -42,7 +42,10 @@ class TestFinGraph2(univ: Univ): Primitive(univ) {
     override suspend fun gameloop(tick: Long, timemillis: Long) {
         vGraph.update(tick, timemillis)
 
-        //开销过大 + 不同步
+    }
+
+    override suspend fun updateBuffer(imageIndex: Int) {
+        //开销过大
         data.vertex.arr = vGraph.vertexData()
         data.index.arr = vGraph.indexData()
         data.vertex.reload_Dynamic()

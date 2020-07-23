@@ -20,7 +20,7 @@ import vulkan.pipelines.PipelineTextured
 class TestIcosphere(univ: Univ) : Primitive(univ) {
 
     init {
-//        instantiate = false
+        instantiate = false
     }
     //    lateinit var obj0: OzObjectTextured
 //    lateinit var obj1: OzObjectTextured

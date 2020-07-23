@@ -15,7 +15,6 @@ suspend fun Univ.makeVertexData_DeviceLocal(arr: FloatArray): VertexData {
         vulkan.commands,
         arr,
         vulkan.buffer.vertexBuffer_device_local(arr),
-        arr.size * Float.BYTES,
         false
     )
 }
@@ -26,7 +25,6 @@ fun Univ.makeVertexData_Dynamic(arr: FloatArray): VertexData {
         vulkan.commands,
         arr,
         vulkan.buffer.vertexBuffer(arr),
-        arr.size * Float.BYTES,
         true
     )
 }
@@ -38,7 +36,6 @@ suspend fun Univ.makeIndexData_DeviceLocal(arr: IntArray): IndexData {
         vulkan.commands.copyBuffer,
         arr,
         vulkan.buffer.indexBuffer_device_local(arr),
-        arr.size * Int.BYTES,
         false
     )
 }
@@ -49,7 +46,6 @@ fun Univ.makeIndexData_Dynamic(arr: IntArray): IndexData {
         vulkan.commands.copyBuffer,
         arr,
         vulkan.buffer.indexBuffer(arr),
-        arr.size * Int.BYTES,
         true
     )
 }

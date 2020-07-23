@@ -14,7 +14,7 @@ import java.lang.Exception
  */
 class GameObjects(val univ: Univ) {
 
-
+    //maybe SyncArray2 can extend to communicating clients
     val primitives = mutableListOf<Primitive>()
 
     val mutex = Mutex()

@@ -17,7 +17,6 @@ class VertexData(
     val commands: OzCommands,
     var arr: FloatArray,
     var vertexBuffer: VmaBuffer,
-    var bufferSize: Int,
     var isDynamic: Boolean
 ) {
     fun bind(cb: CommandBuffer) {
@@ -28,8 +27,7 @@ class VertexData(
             offsets = VkDeviceSize_Array(listOf(VkDeviceSize(0)))
         )
     }
-    fun replaceBuffer(buffer: VmaBuffer, size: Int) {
-        bufferSize = size
+    fun replaceBuffer(buffer: VmaBuffer) {
         val old = vertexBuffer
         vertexBuffer = buffer
         old.destroy()
@@ -39,19 +37,19 @@ class VertexData(
     suspend fun reload_deviceLocal() {
         if (isDynamic) {
             isDynamic = false
-            val bytes = arr.size * Float.BYTES
-            replaceBuffer(buffer.vertexBuffer_device_local(arr), bytes)
+            replaceBuffer(buffer.vertexBuffer_device_local(arr))
             return
         }
         if (arr.isEmpty()) {
-            if (bufferSize > 1) {
-                replaceBuffer(vma.of_VertexBuffer_device_local(1), 1)
+            if (vertexBuffer.memory.bytes > 1) {
+                replaceBuffer(vma.of_VertexBuffer_device_local(1))
             }
             return
         }
         val bytes = arr.size * Float.BYTES
+        val bufferSize = vertexBuffer.memory.bytes
         if (bytes > bufferSize || bytes < bufferSize / 2) {
-            replaceBuffer(buffer.vertexBuffer_device_local(arr), bytes)
+            replaceBuffer(buffer.vertexBuffer_device_local(arr))
         } else {
             val staging = vma.createBuffer_vertexStaging(bytes)
             staging.fill(arr)
@@ -65,20 +63,20 @@ class VertexData(
     fun reload_Dynamic() {
         if (!isDynamic) {
             isDynamic = true
-            val bytes = arr.size * Float.BYTES
-            replaceBuffer(buffer.vertexBuffer(arr), bytes)
+            replaceBuffer(buffer.vertexBuffer(arr))
             return
         }
 
         if (arr.isEmpty()) {
-            if (bufferSize > 1) {
-                replaceBuffer(vma.vertexBuffer(1), 1)
+            if (vertexBuffer.memory.bytes > 1) {
+                replaceBuffer(vma.vertexBuffer(1))
             }
             return
         }
         val bytes = arr.size * Float.BYTES
+        val bufferSize = vertexBuffer.memory.bytes
         if (bytes > bufferSize || bytes < bufferSize / 2) {
-            replaceBuffer(buffer.vertexBuffer(arr), bytes)
+            replaceBuffer(buffer.vertexBuffer(arr))
         } else {
             vertexBuffer.fill(arr)
         }

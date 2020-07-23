@@ -98,5 +98,9 @@ class FirstPersonView(
         viewVector.timesAssign(distance)
         return pos.p.plus(viewVector)
     }
+    fun direction(): Vec3 {
+        return View.viewVector(mouseRotation.rot)
+    }
 
-}
+
+    }

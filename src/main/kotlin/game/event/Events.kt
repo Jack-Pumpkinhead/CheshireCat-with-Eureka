@@ -52,9 +52,11 @@ class Events {
         descripterSetUpdate
     )
 
-    suspend fun launch(scope: CoroutineScope) {
+    fun launch(scope: CoroutineScope) {
         events.forEach {
-            scope.launch { it.process() }
+            scope.launch {
+                it.process()
+            }
         }
     }
 }

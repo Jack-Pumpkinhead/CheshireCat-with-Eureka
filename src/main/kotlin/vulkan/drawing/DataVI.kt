@@ -1,5 +1,6 @@
 package vulkan.drawing
 
+import kool.BYTES
 import vkk.identifiers.CommandBuffer
 import vulkan.buffer.IndexData
 import vulkan.buffer.VertexData
@@ -19,6 +20,8 @@ class DataVI(
     }
 
     suspend fun draw(cb: CommandBuffer, imageIndex: Int) {
+        if (index.indexBuffer.memory.bytes / Int.BYTES == 0) return
+
         descriptors.forEachActive_ifHas(
             { bind(cb) },
             {

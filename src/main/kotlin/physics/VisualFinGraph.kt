@@ -57,7 +57,7 @@ class VisualFinGraph(
 
     fun mass() = points.map(NewtonPoint::m).sum()
     fun center() = points.map { it.p.times(it.m) }
-        .reduce { acc, pm -> acc.plusAssign(pm);acc } / mass()
+        .reduce { acc, p_m -> acc.plusAssign(p_m);acc } / mass()
 
 
     val mutex = Mutex()

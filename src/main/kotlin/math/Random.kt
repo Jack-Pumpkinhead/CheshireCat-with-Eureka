@@ -9,7 +9,7 @@ import kotlin.random.nextUInt
  */
 
 fun randomColor(): Vec3 = Vec3(Random.nextFloat(), Random.nextFloat(), Random.nextFloat())
-fun randomColor(bias: Float): Vec3 = Vec3(random(bias, 1F), random(bias, 1F), random(bias, 1F))
+fun randomColor(min: Float): Vec3 = Vec3(random(min, 1F), random(min, 1F), random(min, 1F))
 fun random(radius: Float): Float = Random.nextInt().toFloat()*radius/Int.MAX_VALUE  // maybe (-radius,radius]
 
 //@ExperimentalUnsignedTypes

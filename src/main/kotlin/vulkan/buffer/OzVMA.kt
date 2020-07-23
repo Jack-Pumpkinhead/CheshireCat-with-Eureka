@@ -64,7 +64,7 @@ class OzVMA(
         val allocationP = PointerBuffer(1)
         val buffer = it.callocLong(1)
         Vma.vmaCreateBuffer(pAllocator, bufferCI, vmaAllocationCI, buffer, allocationP, null)
-        return@Stack VmaBuffer(this.pAllocator, buffer[0], allocationP[0])
+        return@Stack VmaBuffer(this.pAllocator, buffer[0], allocationP[0], bytes.toInt())
     }
 
 

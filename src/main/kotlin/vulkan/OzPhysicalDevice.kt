@@ -25,10 +25,13 @@ class OzPhysicalDevice(val pd: PhysicalDevice) {
 
     init {
         OzVulkan.logger.info {
-            "depthFormat: $depthFormat, maxMSAA: ${maxMSAA.i}"
+            "depthFormat: $depthFormat, maxMSAA: ${maxMSAA.i}"  //depthFormat: VkFormat(i=126), maxMSAA: 8
         }
         OzVulkan.logger.info {
-            "device feature, sampleRateShading: ${features.sampleRateShading}"
+            "sampleRateShading: ${features.sampleRateShading}"  //true
+        }
+        OzVulkan.logger.info {
+            "maxComputeWorkGroupCount: ${properties.limits.maxComputeWorkGroupCount}"   //(2147483647, 65535, 65535)
         }
 
     }

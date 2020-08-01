@@ -25,6 +25,9 @@ class VisualFinGraph(
         color to color
     }
 
+    /**
+     * short index data, but long vertex data.
+     * */
     suspend fun vertexData(): FloatArray {
         val arr = FloatArray(6 * 2 * graph.arrs)
 

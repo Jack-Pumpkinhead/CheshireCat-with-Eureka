@@ -50,22 +50,33 @@ val rasterizationSCI = PipelineRasterizationStateCreateInfo(
     depthBiasSlopeFactor = 0.0f
 )
 val multisampleSCI = PipelineMultisampleStateCreateInfo(
-    sampleShadingEnable = false,
     rasterizationSamples = VkSampleCount._1_BIT,
 //    rasterizationSamples = OzConfigurations.MSAA,
+    sampleShadingEnable = false,
     minSampleShading = 1.0f,
     sampleMask = null,
     alphaToCoverageEnable = false,
     alphaToOneEnable = false
 )
 val multisampleSCI_MSAA = PipelineMultisampleStateCreateInfo(
-    sampleShadingEnable = true,
     rasterizationSamples = OzConfigurations.MSAA,
+    sampleShadingEnable = true,
     minSampleShading = 1.0f,
     sampleMask = null,
     alphaToCoverageEnable = false,
     alphaToOneEnable = false
 )
+fun multisampleSCI(samples: VkSampleCount, minSampleShading: Float): PipelineMultisampleStateCreateInfo {
+    val sampleShadingEnable = minSampleShading >= 0
+    return PipelineMultisampleStateCreateInfo(
+        rasterizationSamples = samples,
+        sampleShadingEnable = sampleShadingEnable,
+        minSampleShading = if (sampleShadingEnable) minSampleShading else 1.0f,
+        sampleMask = null,
+        alphaToCoverageEnable = false,
+        alphaToOneEnable = false
+    )
+}
 
 
 val colorBlendAttachmentState = PipelineColorBlendAttachmentState(

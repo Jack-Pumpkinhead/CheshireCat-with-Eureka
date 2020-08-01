@@ -1,11 +1,4 @@
-package math.cat
-
-import com.google.common.collect.MultimapBuilder
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.launch
-import kotlin.reflect.KClass
+package math.maybespring_deprecated
 
 /**
  * Created by CowardlyLion on 2020/5/7 13:03

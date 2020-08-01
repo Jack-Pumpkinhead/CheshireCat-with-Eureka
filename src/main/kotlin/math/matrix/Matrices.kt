@@ -13,8 +13,8 @@ import kotlinx.coroutines.runBlocking
  */
 class Matrices(val events: Events,val window:OzWindow,val gameloop: Gameloop) {
 
-    val projOrthogonal = ProjectionOrthogonal()
-    val projPerspective = ProjectionPerspective(window,events)
+    val projOrthogonal = ProjectionOrthogonal(window, events)
+    val projPerspective = ProjectionPerspective(window, events)
 
     val fpv = FirstPersonView(
         p= Vec3(-2.86,-3.30,-7.94),
@@ -27,6 +27,7 @@ class Matrices(val events: Events,val window:OzWindow,val gameloop: Gameloop) {
     init {
 
         runBlocking {
+            projOrthogonal.init()
             projPerspective.init()
             fpv.init()
         }

@@ -134,6 +134,8 @@ class FrameLoop(val univ: Univ, val window: OzWindow) {
 
                 univ.vulkan.descriptorSets.mvp.proj.withLockS {
                     univ.matrices.projPerspective.assign(mat4)
+//                    univ.matrices.projOrthogonal.update()
+//                    univ.matrices.projOrthogonal.assign(mat4)
                 }
                 univ.vulkan.descriptorSets.mvp.view.withLockS {
                     univ.matrices.fpv.assign(mat4)

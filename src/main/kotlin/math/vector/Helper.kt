@@ -1,6 +1,10 @@
 package math.vector
 
+import glm_.mat2x2.Mat2
+import glm_.vec2.Vec2
 import glm_.vec3.Vec3
+import glm_.vec3.swizzle.xx
+import glm_.vec3.swizzle.xy
 import org.joml.Vector3f
 
 /**
@@ -36,3 +40,32 @@ fun Vec3.clampZ(abs: Float): Vec3 {
 
 fun distance2(a: Vec3, b: Vec3): Float = (a - b).length2()
 fun distance(a: Vec3, b: Vec3): Float = (a - b).length()
+
+/**
+ * determinant of a->a_ and b->b_
+ * */
+fun crossDeterminant(a: Vec2, a_: Vec2, b: Vec2, b_: Vec2): Float {
+    return Mat2(a_ - a, b_ - b).det
+}
+
+fun solveLinear(A: Mat2, b: Vec2): Vec2 {
+    return A.inverse().times(b)
+}
+
+fun Float.within01(delta: Float = 0.001F) = 0 - delta <= this && this < 1 + delta
+
+fun toVertexData(points: List<Vec3>, color: Vec3): FloatArray {
+    val arr = FloatArray(6 * points.size)
+
+    var index = 0
+    fun put(vec: Vec3) {
+        arr[index++] = vec.x
+        arr[index++] = vec.y
+        arr[index++] = vec.z
+    }
+    points.forEach {
+        put(it)
+        put(color)
+    }
+    return arr
+}

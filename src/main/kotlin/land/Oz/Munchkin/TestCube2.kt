@@ -31,7 +31,7 @@ class TestCube2(univ: Univ) : Primitive(univ) {
             join(mesh.vertex, mesh.texCoord(0)),
             mesh.indices.toIntArray()
         )
-        cube = univ.bindSet(model, univ.loader.buildInTextureSets.crafting_table)
+        cube = univ.bindSet(model, univ.loader.textureSets.crafting_table)
         data.descriptors.assign(cube)
 
         val dataIn = univ.vulkan.graphicPipelines.singleTexture.obj.arr.assign(data)

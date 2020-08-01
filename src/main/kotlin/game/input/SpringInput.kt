@@ -4,8 +4,6 @@ import assimp.AiNode
 import assimp.AiPostProcessStep
 import assimp.Importer
 import assimp.or
-import de.intarsys.cwt.freetype.Freetype
-import de.intarsys.cwt.freetype.nativec.FTLibrary
 import game.entity.Emerald
 import game.entity.EntityNode
 import gli_.Texture
@@ -84,9 +82,8 @@ class SpringInput(val resourceLoader: ResourceLoader) {
 
     }
 
-    fun loadFont(path: String) {
+    /*fun loadFont(path: String): FTBitmap {
 
-//        GrenzeGotisch-VariableFont_wght.ttf
 //FTLibrary.
         val library = Freetype.initFreeType()
         val face = library.newFace(url(path).file, 0)
@@ -95,11 +92,11 @@ class SpringInput(val resourceLoader: ResourceLoader) {
         face.loadGlyph(0,0)
         val glyphSlot = face.glyphSlot
         glyphSlot.renderGlyph(Freetype.RENDER_MODE_NORMAL)
-        val bitmap = glyphSlot.glyphSlot.bitmap
-        bitmap.bytes
+        val bitmap = glyphSlot.glyphSlot.bitmap!!
+        return bitmap
 
     }
 
-
+*/
 
 }

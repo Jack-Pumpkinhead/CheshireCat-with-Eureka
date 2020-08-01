@@ -42,3 +42,15 @@ fun cycNext(mod: Int, a: Int): Int {
         0
     } else a + 1
 }
+
+
+fun interpolate(a: Vec3, b: Vec3, t: Float): Vec3 {
+    val res = a * (1 - t)
+    res.plusAssign(b.x * t, b.y * t, b.z * t)
+    return res
+}
+fun linearCombination(a: Vec3, ta: Float, b: Vec3, tb: Float): Vec3 {
+    val res = a * ta
+    res.plusAssign(b.x * tb, b.y * tb, b.z * tb)
+    return res
+}

@@ -27,7 +27,9 @@ object OzConstants {
     const val ApplicationName = "Eureka"
     val ApplicationVersion = VK10.VK_MAKE_VERSION(1, 0, 0)
     val VulkanAPIVersion = VK10.VK_API_VERSION_1_0
-    val Extensions = setOf(KHRSwapchain.VK_KHR_SWAPCHAIN_EXTENSION_NAME)
+    val Extensions = setOf(
+        KHRSwapchain.VK_KHR_SWAPCHAIN_EXTENSION_NAME
+    )
 
     val Layers: List<String> = listOf(
 //            "VK_LAYER_LUNARG_standard_validation",
@@ -40,6 +42,7 @@ object OzConstants {
     val OzDefaultName = "Oz-Default"
 
     init {
+
 //        vkk.DEBUG = false
         vkk.DEBUG = debug
         if (debug) {

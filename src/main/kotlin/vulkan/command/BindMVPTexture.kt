@@ -17,7 +17,7 @@ class BindMVPTexture(
     val pipelineLayouts: OzPipelineLayouts,
     val descriptorSets: OzDescriptorSets,
     val model: InArrModel,
-    val texture: SyncArray2<SingleTextureSets.ImageInfo>.InArr
+    var texture: SyncArray2<SingleTextureSets.ImageInfo>.InArr
 ) : BindDescriptorSets {
 
     override fun bind(cb: CommandBuffer, imageIndex: Int) {

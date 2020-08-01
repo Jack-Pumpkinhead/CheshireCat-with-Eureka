@@ -11,7 +11,7 @@ class Mesh(val mesh: AiMesh){
 
 
     val vertex: List<Float> = mesh.vertices.flatMap { listOf(it.x, it.y, it.z) }
-    fun texCoord(index: Int) = mesh.textureCoords[index].flatMap { it.toList() }
+    fun texCoord(index: Int) = mesh.textureCoords[index].flatMap { it.toList() }    //may not exist
     val indices: List<Int> = mesh.faces.flatten()
     val indicesArr = mesh.faces.flatten().toIntArray()
     val materialIndex: Int = mesh.materialIndex

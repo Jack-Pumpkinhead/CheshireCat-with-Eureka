@@ -1,6 +1,4 @@
-package math.cat
-
-import kotlin.reflect.KClass
+package math.maybespring_deprecated
 
 
 /**

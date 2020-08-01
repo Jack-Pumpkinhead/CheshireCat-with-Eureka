@@ -1,6 +1,8 @@
 package vulkan.pipelines
 
+import game.main.OzConfigurations
 import kotlinx.coroutines.runBlocking
+import vkk.VkSampleCount
 import vkk.entities.VkPipeline
 import vkk.vk10.structs.Extent2D
 import vkk.vk10.structs.GraphicsPipelineCreateInfo
@@ -31,7 +33,7 @@ class OzGraphicPipelines(
     val hellotexture = PipelineTextured(device, shadermodule, pipelineLayouts, renderPasses, 0, extent2D)
     val helloline = PipelineLine(device, shadermodule, pipelineLayouts, renderPasses, 0, extent2D)
     val vertexOnly = PipelineVertexOnly(device, shadermodule, pipelineLayouts, renderPasses, 0, extent2D)
-    //以上all to be deprecated
+    //以上全 deprecated
 
 
     val pipelines = SyncArray2<GraphicPipeline>()
@@ -76,7 +78,7 @@ class OzGraphicPipelines(
             inputAssemblyState = LineList,
             viewportState = viewportState(extent2D),
             rasterizationState = rasterizationSCI,
-            multisampleState = multisampleSCI_MSAA,
+            multisampleState = multisampleSCI(OzConfigurations.MSAA, 1.0F),
             depthStencilState = depthStencilState,
             colorBlendState = colorBlendSCI,
             dynamicState = null,
@@ -88,6 +90,30 @@ class OzGraphicPipelines(
             basePipelineIndex = -1
         )
     )
+    val line_thin = put_im(
+        GraphicsPipelineCreateInfo(
+            stages = arrayOf(
+                shadermodule.getPipelineShaderStageCI("hellomvp4.vert"),
+                shadermodule.getPipelineShaderStageCI("basic.frag")
+            ),
+            vertexInputState = VertexInput.P3C3,
+            inputAssemblyState = LineList,
+            viewportState = viewportState(extent2D),
+            rasterizationState = rasterizationSCI,
+            multisampleState = multisampleSCI(VkSampleCount._4_BIT, 1.0F),
+            depthStencilState = depthStencilState,
+            colorBlendState = colorBlendSCI,
+            dynamicState = null,
+            layout = pipelineLayouts.mvp,
+            renderPass = renderPasses.renderpass_depth_MSAA,
+//            renderPass = renderPasses.renderpass,
+            subpass = 0,
+            basePipelineHandle = VkPipeline.NULL,
+            basePipelineIndex = -1
+        )
+    )
+
+
     val triangle = put_im(
         GraphicsPipelineCreateInfo(
             stages = arrayOf(

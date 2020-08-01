@@ -1,9 +1,12 @@
 package land.Oz.Quadling.cat
 
+import game.main.Univ
 import glm_.vec3.Vec3
 import glm_.vec3.swizzle.xyz
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import physics.hooke
+import java.util.concurrent.atomic.AtomicReference
 
 /**
  * Created by CowardlyLion on 2020/7/31 20:24
@@ -22,6 +25,7 @@ class CatContext(
 
     val mutex = Mutex()
 
+    var i = 0
     suspend fun data(): Pair<FloatArray, IntArray> {
         return mutex.withLock {
 
@@ -38,6 +42,20 @@ class CatContext(
                 hom.indexData(index, bias)
                 bias += hom.points.size
             }
+
+            i++
+
+            if (i % 100 == 0) {
+                Univ.logger.info {
+                    dragView
+                }
+            }
+            if (dragView != null && dragPoint != null) {
+                dragView!!.vertexData(data, dragPoint!!)
+                dragView!!.indexData(index, bias)
+                bias += dragView!!.points.size
+            }
+
             data.toFloatArray() to index.toIntArray()
         }
 
@@ -45,6 +63,30 @@ class CatContext(
 
     suspend fun update() {
         mutex.withLock {
+
+//            points.forEach {
+//                it.center.f.put(0F, 0F, 0F)
+//            }
+
+//            if (drag != null && dragPoint != null) {
+//                drag!!.center.f.plusAssign(hooke(drag!!.center.p, dragPoint!!))
+//            }
+
+//            points.forEach {
+//                it.center.f.plusAssign(physics.drag.get(it.center.p, it.center.v))
+//            }
+//            points.forEach {
+//                it.center.update()
+//            }
+            if (drag != null && dragPoint != null) {
+                drag!!.center.p.put(dragPoint!!)
+            }
+            if (dragView != null) {
+                dragView!!.update()
+            }
+
+
+
             points.forEach {
                 it.update()
             }
@@ -96,7 +138,7 @@ class CatContext(
             val length = direction.length()
 
             var maxCos = 0F
-            lateinit var closestPoint: CatGraph
+            var closestPoint: CatGraph? = null
 
             for (point in points) {
                 val disp = point.center.p - pos
@@ -109,11 +151,21 @@ class CatContext(
                 }
             }
 
-            if (selected.isEmpty() || selected[selected.lastIndex] != closestPoint) {
-                selected += closestPoint
+            if (selected.isEmpty() ||
+                (closestPoint != null && selected[selected.lastIndex] != closestPoint)
+            ) {
+                selected += closestPoint!!
             }
         }
     }
+
+    var drag : CatGraph? = null
+    var dragPoint: Vec3? = null
+    @Volatile var dragView: CatGraph? = null
+//    var dragView: AtomicReference<CatGraph> = AtomicReference()
+
+
+
 
 
 }

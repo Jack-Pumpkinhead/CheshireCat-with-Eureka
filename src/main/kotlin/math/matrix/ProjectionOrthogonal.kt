@@ -33,9 +33,9 @@ class ProjectionOrthogonal(val window: OzWindow, val events: Events) {
         }
         events.mouseScroll.subscribe {
             magnify += it.delta
-            Univ.logger.info {
-                "mag: $magnify"
-            }
+//            Univ.logger.info {
+//                "mag: $magnify"
+//            }
         }
 
     }

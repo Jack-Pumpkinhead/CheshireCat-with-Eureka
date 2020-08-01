@@ -58,9 +58,9 @@ class FirstPersonView(
            }
        }
 
-       events.mouseScroll.subscribe {
-           force += it.delta * 10
-       }
+//       events.mouseScroll.subscribe {
+//           force += it.delta * 10
+//       }
 
    }
 

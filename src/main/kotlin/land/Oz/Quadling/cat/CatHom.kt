@@ -13,13 +13,13 @@ import kotlin.math.atan
  * Created by CowardlyLion on 2020/7/31 20:54
  */
 class CatHom(
-    val source: CatGraph,
-    val target: CatGraph,
+    val source: CatPoint,
+    val target: CatPoint,
     center: NewtonPoint = NewtonPoint(p = (source.center.p + target.center.p) / 2),
     points: MutableList<NewtonPoint> = mutableListOf(),
     colors: MutableList<Vec3> = mutableListOf(),
     lines: MutableList<Int> = mutableListOf()
-):CatGraph(center, points, colors, lines) {
+):CatPoint(center, points, colors, lines) {
 
     class Line(val type: String, val color: Vec3) {
         companion object {

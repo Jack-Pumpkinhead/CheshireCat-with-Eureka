@@ -4,10 +4,8 @@ import game.Primitive
 import game.main.Univ
 import glm_.vec3.Vec3
 import kotlinx.coroutines.sync.withLock
-import land.Oz.Quadling.knot.Knot
 import math.matrix.InArrModel
 import math.randomVec3
-import physics.NewtonPoint
 import uno.glfw.Key
 import uno.glfw.MouseButton
 import vulkan.buffer.makeDataVI_Dynamic
@@ -22,7 +20,11 @@ import kotlin.random.Random
  */
 class TestCat(univ: Univ) : Primitive(univ) {
 
-    lateinit var cat: CatContext
+    init {
+        instantiate = false
+    }
+
+    lateinit var cat: CatGraph
     lateinit var data: DataVI
 
 
@@ -41,13 +43,16 @@ class TestCat(univ: Univ) : Primitive(univ) {
 //        univ.events.keyPress.subscribe { (key, mods) ->
 //            if (key == Key.K) {
                 val spawn = fpv.forward(1F)
-                cat = CatContext(
+                cat = CatGraph(
+                    center = cubeExact(spawn,5F),
                     points = mutableListOf(
                         tetrahedron(spawn),
                         tetrahedron(randomVec3(spawn, 1F)),
                         cube(randomVec3(spawn, 1F)),
                         cube(randomVec3(spawn, 1F)),
-                        cube(randomVec3(spawn, 1F))
+                        cube(randomVec3(spawn, 1F)),
+                        cubeExact(randomVec3(spawn, 1F)),
+                        cubeExact(randomVec3(spawn, 1F))
                     )
                 )
 
@@ -126,7 +131,7 @@ class TestCat(univ: Univ) : Primitive(univ) {
                     cat.mutex.withLock {
                         if (cat.selected.isNotEmpty()) {
                             dragging = true
-                            cat.drag = cat.selected[cat.selected.size - 1]
+                            cat.draged = cat.selected[cat.selected.size - 1]
                             cat.dragPoint = fpv.forward(forward)
                             cat.dragView = smallTetrahedron(Vec3())
                         }
@@ -142,12 +147,9 @@ class TestCat(univ: Univ) : Primitive(univ) {
                     if (dragging) {
                         cat.mutex.withLock {
                             dragging = false
-                            cat.drag = null
+                            cat.draged = null
                             cat.dragPoint = null
                             cat.dragView = null //maybe delay
-                            Univ.logger.info {
-                                "cleared"
-                            }
                         }
                     }
                 }
@@ -162,8 +164,8 @@ class TestCat(univ: Univ) : Primitive(univ) {
     override suspend fun gameloop(tick: Long, timemillis: Long) {
         if (initialized) {
             cat.select(fpv.pos.p, fpv.direction())
-            if (dragging) {
-                cat.mutex.withLock {
+            cat.mutex.withLock {
+                if (dragging) {
                     cat.dragPoint = fpv.forward(forward)
                 }
             }

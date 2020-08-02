@@ -1,144 +1,163 @@
 package land.Oz.Quadling.cat
 
 import glm_.vec3.Vec3
-import physics.*
-import kotlin.math.atan
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /**
- * Created by CowardlyLion on 2020/7/31 20:27
+ * Created by CowardlyLion on 2020/7/31 20:24
  */
-open class CatGraph(
-    val center: NewtonPoint,
-    val points: MutableList<NewtonPoint>,
-    val colors: MutableList<Vec3>,
-    val lines: MutableList<Int>,
-    var lineAttractForce: Float = 0.2F
+class CatGraph(
+    val center: CatPoint,
+    val points: MutableList<CatPoint>,
+    val homs: MutableMap<Pair<CatPoint, CatPoint>, CatHom> = mutableMapOf()  //assumption: homs rare
 ) {
 
-    //structure point (for view)
-    //generic point
-    //special point
+    fun addLine(s: CatPoint, t: CatPoint, line: CatHom.Line) {
+        val hom = homs.computeIfAbsent(s to t) { (so, ta) ->
+            CatHom(so, ta)
+        }
+        hom.addLine(line)
+    }
 
-    val extra = mutableMapOf<String, NewtonPoint>()
+    val mutex = Mutex()
 
-
-
-
-    /*suspend fun addL(point: NewtonPoint, color: Vec3): Int {
+    suspend fun data(): Pair<FloatArray, IntArray> {
         return mutex.withLock {
-            points += point
-            colors += color
-            points.size - 1
+
+            val data = mutableListOf<Float>()
+            val index = mutableListOf<Int>()
+            var bias = 0
+            points.forEach {
+                it.vertexData(data)
+                it.indexData(index, bias)
+                bias += it.points.size
+            }
+            homs.values.forEach { hom ->
+                hom.vertexData(data)
+                hom.indexData(index, bias)
+                bias += hom.points.size
+            }
+
+            if (dragView != null && dragPoint != null) {
+                dragView!!.vertexData(data, dragPoint!!)
+                dragView!!.indexData(index, bias)
+                bias += dragView!!.points.size
+            }
+            center.vertexData(data)
+            center.indexData(index, bias)
+            bias += center.points.size
+
+            data.toFloatArray() to index.toIntArray()
         }
+
     }
-    suspend fun addLineL(from: Int, to: Int) {
+
+    suspend fun update() {
         mutex.withLock {
-            lines += from
-            lines += to
-        }
-    }*/
-    fun add(point: NewtonPoint, color: Vec3): Int {
-        points += point
-        colors += color
-        return points.size - 1
-    }
 
-    fun addLine(from: Int, to: Int) {
-        lines += from
-        lines += to
-    }
+//            points.forEach {
+//                it.center.f.put(0F, 0F, 0F)
+//            }
 
+//            if (drag != null && dragPoint != null) {
+//                drag!!.center.f.plusAssign(hooke(drag!!.center.p, dragPoint!!))
+//            }
 
-    //    val mutex = Mutex()
-    fun vertexData(data: MutableList<Float>) {
-        fun put(vec: Vec3) {
-            data += vec.x
-            data += vec.y
-            data += vec.z
-        }
-
-        for (i in points.indices) {
-            put(points[i].p)
-            put(colors[i])
-        }
-    }
-    fun vertexData(data: MutableList<Float>, rel: Vec3) {
-        fun putP(vec: Vec3) {
-            data += vec.x + rel.x
-            data += vec.y + rel.y
-            data += vec.z + rel.z
-        }
-        fun put(vec: Vec3) {
-            data += vec.x
-            data += vec.y
-            data += vec.z
-        }
+//            points.forEach {
+//                it.center.f.plusAssign(physics.drag.get(it.center.p, it.center.v))
+//            }
+//            points.forEach {
+//                it.center.update()
+//            }
+            if (draged != null && dragPoint != null) {
+                draged!!.center.p.put(dragPoint!!)
+            }
+            if (dragView != null) {
+                dragView!!.update()
+            }
 
 
-        for (i in points.indices) {
-            putP(points[i].p)
-            put(colors[i])
-        }
-    }
 
-    fun indexData(data: MutableList<Int>, bias: Int){
-        lines.forEach {
-            data += it + bias
-        }
-    }
+            points.forEach {
+                it.update()
+            }
+            homs.values.forEach { hom->
+                    hom.update()
+            }
 
-    val attractForce = 0.5F
-    val pivotForce = 0.5F
+            if (selected.size > maxSelection) {
+                val temp = mutableListOf<CatPoint>()
+                for (i in (selected.size - maxSelection) until selected.size) {
+                    temp += selected[i]
+                }
+                selected.clear()
+                selected.addAll(temp)
+            }
 
-    val extraConstraint = mutableListOf<() -> Unit>()
+            points.forEach {
+                for (i in it.colors.indices) {
+                    it.colors[i] = green
+                }
+            }
+            for (i in 0 until selected.size) {
 
-
-    open fun update() {
-//        mutex.withLock {
-
-        points.forEach { it.f = Vec3() }
-        for (i in points.indices) { //互相排斥
-            for (j in 0 until i) {
-                val a = points[i]
-                val b = points[j]
-                val f = gravity(a.p, a.m, b.p, b.m, 1.0, -0.5F)
-                a.f.plusAssign(f)
-                b.f.plusAssign(-f)
+                for (j in selected[i].colors.indices) {
+                    selected[i].colors[j] = selected_color[i]
+                }
             }
         }
+    }
 
-        for (i in 0 until lines.size step 2) {
-            val a = points[lines[i]]
-            val b = points[lines[i + 1]]
-            val f = hooke(a.p, b.p, 1.0, lineAttractForce)
-            a.f.plusAssign(f)
-            b.f.plusAssign(-f)
-        }
+    var maxSelection = 2
+    var displaySelected = true
+    val selected = mutableListOf<CatPoint>()
+    val selected_color = mutableListOf<Vec3>()
 
-        points.forEach {    //拉近锚点
-            val f = force(it.p, center.p) { r -> pivotForce * atan(r) }
-            it.f.plusAssign(f)
-        }
+    init {
+        selected_color += red
+        selected_color += blue2
+        selected_color += blue
 
-        for (i in points.indices) { //互相拉近
-            for (j in 0 until i) {
-                val a = points[i]
-                val b = points[j]
-                val f = force(a.p, b.p) { r -> attractForce * atan(r) }
-                a.f.plusAssign(f)
-                b.f.plusAssign(-f)
+    }
+
+    suspend fun select(pos: Vec3, direction: Vec3) {
+        mutex.withLock {
+
+
+            if (points.isEmpty()) return
+
+            val length = direction.length()
+
+            var maxCos = 0F
+            var closestPoint: CatPoint? = null
+
+            for (point in points) {
+                val disp = point.center.p - pos
+                val dot = disp.dot(direction)
+                if (dot <= 0) continue
+                val cos = dot / (disp.length() * length)
+                if (cos > maxCos) {
+                    maxCos = cos
+                    closestPoint = point
+                }
+            }
+
+            if (closestPoint != null &&
+                (selected.isEmpty() || selected[selected.lastIndex] != closestPoint)
+            ) {
+                selected += closestPoint!!
             }
         }
-        for (i in points.indices) { //流体阻力
-            val a = points[i]
-            a.f.plusAssign(drag.get(a.p, a.v))
-        }
-
-        extraConstraint.forEach { it.invoke() }
-
-
-        points.forEach { it.update() }
     }
+
+    var draged : CatPoint? = null
+    var dragPoint: Vec3? = null
+    var dragView: CatPoint? = null
+//    var dragView: AtomicReference<CatGraph> = AtomicReference()
+
+
+
 
 
 }

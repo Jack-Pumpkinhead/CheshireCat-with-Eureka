@@ -69,3 +69,25 @@ fun toVertexData(points: List<Vec3>, color: Vec3): FloatArray {
     }
     return arr
 }
+
+fun MutableList<Float>.addVec(vec: Vec3) {
+    add(vec.x)
+    add(vec.y)
+    add(vec.z)
+}
+fun MutableList<Float>.addVecRel(vec: Vec3, rel: Vec3) {
+    add(vec.x + rel.x)
+    add(vec.y + rel.y)
+    add(vec.z + rel.z)
+}
+
+fun projection(vec: Vec3, to: Vec3): Vec3 {
+    val dot = vec.dot(to)
+    if (dot == 0F) return Vec3()
+    return to.times(dot / to.length2())
+}
+fun dotUnit(vec: Vec3, to: Vec3): Float {
+    val dot = vec.dot(to)
+    if (dot == 0F) return 0F
+    return dot / to.length()
+}

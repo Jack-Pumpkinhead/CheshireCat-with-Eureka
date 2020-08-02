@@ -29,7 +29,8 @@ class IndexData(
         )
     }
     fun draw(cb: CommandBuffer) {
-        val ints = indexBuffer.memory.bytes / Int.BYTES
+//        val ints = indexBuffer.memory.bytes / Int.BYTES   //造成旧数据的绘制
+        val ints = arr.size
         if (ints > 0) {
             cb.drawIndexed(
                 indexCount = ints,

@@ -116,8 +116,26 @@ fun angleForce(
     return disp
 }
 
-
+fun snapToPlane(
+    p: Vec3,
+    center: Vec3,
+    normal: Vec3,
+    k: Float = 1F
+): Vec3 {
+    val disp = center - p
+    val dot = disp.dot(normal)
+    if (dot == 0F) return Vec3()
+    val times = normal.times(dot / normal.length2())
+    if (disp.dot(times) > 0) {
+        times.timesAssign(k)
+    } else {
+        times.timesAssign(-k)
+    }
+    return times
+}
 
 val drag = DragForce({ 1F }, { Vec3() }, { 10F })
+
+val dragWeak = DragForce({ 1F }, { Vec3() }, { 1F })
 
 

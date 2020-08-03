@@ -16,7 +16,7 @@ class TestRectangle2(univ: Univ): Primitive(univ) {
     lateinit var model1: Model
 
     init {
-//        instantiate = false
+        instantiate = false
 //        active = false
 
 

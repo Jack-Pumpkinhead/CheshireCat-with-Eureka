@@ -12,6 +12,7 @@ val green = Vec3.fromColor(30, 120, 70)
 val blue = Vec3.fromColor(30, 10, 130)
 val blue2 = Vec3.fromColor(10, 30, 100)
 val red = Vec3.fromColor(100, 50, 60)
+val purple = Vec3.fromColor(174, 56, 242)
 
 fun tetrahedron(center: Vec3, radius: Float = 1F, lineDist: Float = 0.5F) = CatPoint(
     center = NewtonPoint(p = center),
@@ -90,7 +91,7 @@ fun squareLessExact(center: Vec3, lineDist: Float = 2F) = CatPoint2(
         NewtonPoint(p = center + Vec3(+1F, -1F, 0F) + randomVec3(0.01F))
     ),
     colors = mutableListOf(green, green, green, green),
-    active = mutableListOf(true, true, true, true),
+    actives = mutableListOf(true, true, true, true),
     lines = mutableListOf(
         0, 1, 1, 2, 2, 3, 3, 0
     ),

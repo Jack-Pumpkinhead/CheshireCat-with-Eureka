@@ -6,9 +6,11 @@ import glm_.vec3.swizzle.xyz
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import land.Oz.Quadling.cat.*
+import math.vector.distance2
 import math.vector.projection
 import math.vector.dotUnit
 import physics.NewtonPoint
+import physics.dragWeak
 import physics.snapToPlane
 import kotlin.math.abs
 import kotlin.math.max
@@ -119,15 +121,29 @@ class Squares(
 
     }
 
+    var drawMode = false
+
     suspend fun update() {
         mutex.withLock {
 
 
-
             squares.forEach {
                 it.update()
+                for (i in 4 until it.points.size) {
+                    val point = it.points[i]
+                    point.f.put(0, 0, 0)
+                    val disp = it.center.p - point.p
+                    val proj = projection(disp, face)
+                    if (proj.length() < 0.1F) {
+                        if (point.v.length() > 1F) {
+                            point.v.timesAssign(0.9F)
+                        }
+                        point.f.plusAssign(snapToPlane(point.p, it.center.p, face, 1F, 1F))
+                        point.f.plusAssign(dragWeak.get(point.p, point.v))
+                    }
+                    point.update()
+                }
             }
-
 
             if (selected.size > maxSelection) {
                 val temp = mutableListOf<CatPoint2>()
@@ -139,17 +155,50 @@ class Squares(
             }
 
             squares.forEach {
-                for (i in it.colors.indices) {
+//                for (i in it.colors.indices) {
+                for (i in 0..3) {
                     it.colors[i] = green
                 }
             }
             for (i in 0 until selected.size) {
 
-                for (j in selected[i].colors.indices) {
+//                for (j in selected[i].colors.indices) {
+                for (j in 0..3) {
                     selected[i].colors[j] = selected_color[i]
                 }
             }
 
+        }
+    }
+
+    var distanceLimit2 = 0.001F
+
+    var firstGen = true
+    val lastGens = mutableListOf<Int>()
+    fun tryGenerate(pos: NewtonPoint, point: CatPoint2, index: Int, color: Vec3) {
+        if (point.points.isNotEmpty() && distance2(point.points.last().p, pos.p) > distanceLimit2) {
+            /*Univ.logger.info {
+                "generated: ${point.points.size} $point"
+            }*/
+            val p = point.add(pos, color, false)
+            if (lastGens[index] != -1) {
+                point.addLine(lastGens[index], p)
+            }
+            lastGens[index] = p
+            /* if (!firstGen) {
+                 point.addLine(p - 1, p)
+             } else {
+                 firstGen = false
+             }*/
+            /*Univ.logger.info {
+                "generated ${p}: ${purple} / ${point.colors[p-1]}"
+            }*/
+//            if (point.colors[p - 1] === purple) { //why not purple
+//                point.addLine(p - 1, p)
+            /*Univ.logger.info {
+                "generated: ${point.lines.size} $point"
+            }*/
+//            }
         }
     }
 

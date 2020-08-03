@@ -13,14 +13,15 @@ class CatPoint2(
     val center: NewtonPoint,
     val points: MutableList<NewtonPoint>,
     val colors: MutableList<Vec3>,
-    val active: MutableList<Boolean>,
+    val actives: MutableList<Boolean>,
     val lines: MutableList<Int>,
     var lineDist: Float = 1F
 ) {
 
-    fun add(point: NewtonPoint, color: Vec3): Int {
+    fun add(point: NewtonPoint, color: Vec3, active: Boolean = true): Int {
         points += point
         colors += color
+        actives += active
         return points.size - 1
     }
 
@@ -53,7 +54,7 @@ class CatPoint2(
 
     open fun update() {
 
-        val pointsA = points.filterIndexed { i, _ -> active[i] }
+        val pointsA = points.filterIndexed { i, _ -> actives[i] }
 
         pointsA.forEach { it.f = Vec3() }
         for (i in pointsA.indices) { //互相排斥
@@ -67,7 +68,7 @@ class CatPoint2(
         }
 
         for (i in 0 until lines.size step 2) {  //拉近连线
-            if (!active[lines[i]] || !active[lines[i + 1]]) continue
+            if (!actives[lines[i]] || !actives[lines[i + 1]]) continue
             val a = points[lines[i]]
             val b = points[lines[i + 1]]
             val f = hooke(a.p, b.p, 1.0, 0.1F)

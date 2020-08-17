@@ -31,6 +31,10 @@ import kotlin.math.abs
  */
 class TestSquare(univ: Univ) : Primitive(univ){
 
+    init {
+        instantiate = false
+    }
+
     lateinit var sq: Squares
     lateinit var data: DataVI
 

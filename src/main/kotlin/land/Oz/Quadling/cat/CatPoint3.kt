@@ -1,0 +1,96 @@
+package land.Oz.Quadling.cat
+
+import glm_.vec3.Vec3
+import math.vector.addVec
+import math.vector.addVecRel
+import physics.*
+import kotlin.math.atan
+
+/**
+ * Created by CowardlyLion on 2020/8/8 20:23
+ */
+class CatPoint3(
+    val center: NewtonPoint,
+    val points: MutableList<NewtonPoint>,
+    val overlapColors: MutableList<Vec3>,
+    val actives: MutableList<Boolean>,
+    val lines: MutableList<Int>,
+    var lineDist: Float = 1F
+){
+    fun vertexData(data: MutableList<Float>) {
+        val finalColor = overlapColors.last()
+        for (i in points.indices) {
+            data.addVec(points[i].p)
+            data.addVec(finalColor)
+        }
+    }
+    fun vertexData(data: MutableList<Float>, rel: Vec3) {
+        val finalColor = overlapColors.last()
+        for (i in points.indices) {
+            data.addVecRel(points[i].p, rel)
+            data.addVec(finalColor)
+        }
+    }
+    fun indexData(data: MutableList<Int>, bias: Int){
+        lines.forEach {
+            data += it + bias
+        }
+    }
+
+    val attractForce = 0.1F
+    val pivotForce = 0.5F
+
+    val extraConstraint = mutableListOf<(CatPoint3, List<NewtonPoint>) -> Unit>()
+
+
+    open fun update() {
+
+        val pointsA = points.filterIndexed { i, _ -> actives[i] }
+
+        pointsA.forEach { it.f = Vec3() }
+        for (i in pointsA.indices) { //互相排斥
+            for (j in 0 until i) {
+                val a = pointsA[i]
+                val b = pointsA[j]
+                val f = gravity(a.p, a.m, b.p, b.m, 1.0, -0.25F * lineDist)
+                a.f.plusAssign(f)
+                b.f.plusAssign(-f)
+            }
+        }
+
+        for (i in 0 until lines.size step 2) {  //拉近连线
+            if (!actives[lines[i]] || !actives[lines[i + 1]]) continue
+            val a = points[lines[i]]
+            val b = points[lines[i + 1]]
+            val f = hooke(a.p, b.p, 1.0, attractForce)
+            a.f.plusAssign(f)
+            b.f.plusAssign(-f)
+        }
+
+        pointsA.forEach {    //拉近锚点
+            val f = force(it.p, center.p) { r -> pivotForce * atan(r) }
+            it.f.plusAssign(f)
+        }
+
+        /*for (i in pointsA.indices) { //互相拉近
+            for (j in 0 until i) {
+                val a = pointsA[i]
+                val b = pointsA[j]
+                val f = force(a.p, b.p) { r -> attractForce * atan(r) }
+                a.f.plusAssign(f)
+                b.f.plusAssign(-f)
+            }
+        }*/
+
+        for (i in pointsA.indices) { //流体阻力
+            val a = pointsA[i]
+            a.f.plusAssign(dragWeak.get(a.p, a.v))
+        }
+
+        extraConstraint.forEach { it.invoke(this, pointsA) }
+
+
+
+        pointsA.forEach { it.update() }
+    }
+}

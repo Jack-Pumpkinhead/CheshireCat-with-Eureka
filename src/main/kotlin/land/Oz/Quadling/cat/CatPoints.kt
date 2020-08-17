@@ -1,5 +1,6 @@
 package land.Oz.Quadling.cat
 
+import game.entity.Lines
 import glm_.vec3.Vec3
 import math.randomVec3
 import physics.NewtonPoint
@@ -81,6 +82,36 @@ fun cubeExact(center: Vec3, lineDist: Float = 2F) = CatPoint(
     ),
     lineDist = lineDist
 )
+
+fun cubeExact4(center: Vec3, repulsive: Float = 0.25F, size: Float = 1F): CatPoint4 {
+    val p = CatPoint4(
+        center = NewtonPoint(p = center),
+        line = Lines(
+            points = mutableListOf(
+                NewtonPoint(p = center + Vec3(-1F, -1F, -1F) * size),
+                NewtonPoint(p = center + Vec3(-1F, -1F, +1F) * size),
+                NewtonPoint(p = center + Vec3(-1F, +1F, +1F) * size),
+                NewtonPoint(p = center + Vec3(-1F, +1F, -1F) * size),
+                NewtonPoint(p = center + Vec3(+1F, -1F, -1F) * size),
+                NewtonPoint(p = center + Vec3(+1F, -1F, +1F) * size),
+                NewtonPoint(p = center + Vec3(+1F, +1F, +1F) * size),
+                NewtonPoint(p = center + Vec3(+1F, +1F, -1F) * size)
+            ),
+            colors = mutableListOf(green, green, green, green, green, green, green, green),
+            lines = mutableListOf(
+                0, 1, 1, 2, 2, 3, 3, 0,
+                4, 5, 5, 6, 6, 7, 7, 4,
+                0, 4, 1, 5, 2, 6, 3, 7
+            ),
+            fixes = mutableListOf(false, false, false, false, false, false, false, false)
+        )
+    )
+
+    p.repulsive.strenth = repulsive
+
+    return p
+}
+
 
 fun squareLessExact(center: Vec3, lineDist: Float = 2F) = CatPoint2(
     center = NewtonPoint(p = center),

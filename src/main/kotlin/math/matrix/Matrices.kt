@@ -17,8 +17,8 @@ class Matrices(val events: Events,val window:OzWindow,val gameloop: Gameloop) {
     val projPerspective = ProjectionPerspective(window, events)
 
     val fpv = FirstPersonView(
-        p= Vec3(-2.86,-3.30,-7.94),
-        rot = Vec3(-0.07,0.30,0.00),
+        p = Vec3(-2.86, -3.30, -7.94),
+        rot = Vec3(-0.07, 0.30, 0.00),
         events = events,
         window = window,
         dt = gameloop.dt.toFloat()

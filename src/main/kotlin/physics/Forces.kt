@@ -59,8 +59,8 @@ fun hooke(
 ): Vec3 {
     val disp = p_ - p
     if(disp.allEqual(0F)) return Vec3()
-    val xPow = disp.length2().toDouble().pow(power / 2).toFloat()  //r^power
-    disp.timesAssign(k * xPow / disp.length())
+    val rPow = disp.length2().toDouble().pow(power / 2).toFloat()  //r^power
+    disp.timesAssign(k * rPow / disp.length())
     return disp
 }
 
@@ -156,6 +156,20 @@ fun snapToPlane(
     return times
 }
 
+//F = (c * |dv|^pow) dv
+fun staticDrag(
+    p: Vec3,
+    v: Vec3,
+    v_: Vec3,
+    power: Double = 1.0,
+    strenth: Float = 1F
+): Vec3 {
+    val dv = v_ - v
+    val r = dv.length()
+    if (r == 0f) return dv
+    val rPow = r.toDouble().pow(power).toFloat()
+    return dv * (strenth * rPow / r)
+}
 
 val drag = DragForce({ 1F }, { Vec3() }, { 10F })
 
